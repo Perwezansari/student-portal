@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel — Student Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="loginView" class="auth-wrap">
+  <form id="loginForm" class="auth-card">
+    <span class="eyebrow">Admission Register</span>
+    <h2>Admin Login</h2>
+    <p class="muted">Ye sirf aapke (admin) liye hai — students yahan se login nahi karte.</p>
+
+    <label for="email">Email</label>
+    <input type="email" id="email" required autocomplete="username" placeholder="admin@example.com">
+
+    <label for="password">Password</label>
+    <input type="password" id="password" required autocomplete="current-password" placeholder="••••••••">
+
+    <button type="submit" class="btn primary full">Login</button>
+    <p id="loginError" class="error"></p>
+  </form>
+</div>
+
+<div id="dashboardView" style="display:none;">
+  <div class="topbar">
+    <h1>Admin Panel</h1>
+    <button id="logoutBtn" class="btn ghost">Logout</button>
+  </div>
+
+  <main class="container">
+
+    <div class="card">
+      <h2>Add Student</h2>
+      <form id="addStudentForm" class="grid-form">
+        <div>
+          <label for="sName">Name</label>
+          <input type="text" id="sName" required>
+        </div>
+        <div>
+          <label for="sDate">Admission Date</label>
+          <input type="date" id="sDate" required>
+        </div>
+        <div>
+          <label for="sTotal">Total Fee (₹)</label>
+          <input type="number" id="sTotal" min="0" step="1" required>
+        </div>
+        <div>
+          <label for="sPaid">Paid so far (₹)</label>
+          <input type="number" id="sPaid" min="0" step="1" required value="0">
+        </div>
+        <div>
+          <label for="sEmail">Student Login Email</label>
+          <input type="email" id="sEmail" required placeholder="rollno1@apnaschool.com">
+        </div>
+        <div>
+          <label for="sPassword">Student Login Password</label>
+          <input type="text" id="sPassword" required minlength="6" placeholder="kam se kam 6 characters">
+        </div>
+        <button type="submit" class="btn primary">Add Student</button>
+      </form>
+      <p id="addStatus" class="status"></p>
+    </div>
+
+    <div class="card">
+      <h2>Students</h2>
+      <p id="permissionError" class="error" style="display:none;">
+        Aapka account admin list mein register nahi hai. README ke Step 6–7 dobara check karein.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th><th>Admission</th><th>Total</th><th>Paid</th><th>Due</th><th>Update paid amount</th>
+            </tr>
+          </thead>
+          <tbody id="studentsBody">
+            <tr><td colspan="6" class="muted">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="app-admin.js"></script>
+</body>
+</html>

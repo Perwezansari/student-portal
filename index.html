@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="loginView" class="auth-wrap">
+  <form id="loginForm" class="auth-card">
+    <span class="eyebrow">Admission Register</span>
+    <h2>Student Login</h2>
+    <p class="muted">Aapko diya gaya email aur password daalein.</p>
+
+    <label for="email">Email</label>
+    <input type="email" id="email" required autocomplete="username" placeholder="you@example.com">
+
+    <label for="password">Password</label>
+    <input type="password" id="password" required autocomplete="current-password" placeholder="••••••••">
+
+    <button type="submit" class="btn primary full">Login</button>
+    <p id="loginError" class="error"></p>
+  </form>
+</div>
+
+<div id="dashboardView" style="display:none;">
+  <div class="topbar">
+    <h1>Student Portal</h1>
+    <button id="logoutBtn" class="btn ghost">Logout</button>
+  </div>
+  <main class="container">
+    <div class="card" id="dashboardContent">
+      <p class="muted">Loading...</p>
+    </div>
+  </main>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="app-student.js"></script>
+</body>
+</html>

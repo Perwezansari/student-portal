@@ -1,0 +1,319 @@
+/* ============================================================
+   Student Portal — design tokens
+   Theme: an admission-register / ledger card, rendered clean.
+   ============================================================ */
+
+:root {
+  --ink: #1B2420;
+  --primary: #1F4D3E;
+  --primary-dark: #163A2E;
+  --paper: #F3F5F1;
+  --card: #FFFFFF;
+  --muted: #64756B;
+  --border: #DDE3DC;
+  --brass: #B8862E;
+  --due: #A8402F;
+  --due-bg: #FBEEEC;
+  --paid: #1F4D3E;
+  --paid-bg: #EAF1EC;
+  --radius: 16px;
+  --shadow: 0 10px 30px rgba(27, 36, 32, 0.07);
+  --focus: #B8862E;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 600;
+  margin: 0 0 4px;
+  letter-spacing: -0.01em;
+}
+
+p { margin: 0 0 8px; line-height: 1.5; }
+
+.muted { color: var(--muted); font-size: 14px; }
+
+a { color: var(--primary); }
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* ---------- Auth screens ---------- */
+
+.auth-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 32px 28px 28px;
+  position: relative;
+  animation: rise 0.35s ease;
+}
+
+.auth-card .eyebrow {
+  display: inline-block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brass);
+  margin-bottom: 10px;
+}
+
+.auth-card h2 {
+  font-size: 24px;
+  margin-bottom: 6px;
+}
+
+.auth-card .muted {
+  margin-bottom: 22px;
+}
+
+label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  margin: 14px 0 6px;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"] {
+  width: 100%;
+  padding: 11px 13px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 15px;
+  font-family: inherit;
+  background: #FCFDFC;
+  color: var(--ink);
+}
+
+input:focus {
+  border-color: var(--brass);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: none;
+  border-radius: 10px;
+  padding: 11px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.btn.primary {
+  background: var(--primary);
+  color: #fff;
+}
+.btn.primary:hover { background: var(--primary-dark); }
+
+.btn.ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--ink);
+}
+.btn.ghost:hover { border-color: var(--primary); }
+
+.btn.danger {
+  background: #fff;
+  border: 1px solid var(--due);
+  color: var(--due);
+}
+.btn.danger:hover { background: var(--due-bg); }
+
+.btn.small { padding: 6px 12px; font-size: 12.5px; }
+.btn.full { width: 100%; margin-top: 18px; }
+
+.error {
+  color: var(--due);
+  font-size: 13.5px;
+  margin-top: 12px;
+  min-height: 1em;
+}
+
+.status { font-size: 13.5px; margin-top: 12px; min-height: 1em; }
+.status.success { color: var(--paid); }
+.status.danger { color: var(--due); }
+
+/* ---------- App shell ---------- */
+
+.topbar {
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  padding: 18px 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.topbar h1 { font-size: 19px; }
+
+.container {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 28px 20px 60px;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 26px 26px 24px;
+  margin-bottom: 22px;
+  animation: rise 0.35s ease;
+}
+
+.card h2 {
+  font-size: 18px;
+  margin-bottom: 18px;
+}
+
+/* ---------- Ledger rows (student dashboard) ---------- */
+
+.info-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 13px 0;
+  border-bottom: 1px dashed var(--border);
+}
+.info-row:last-child { border-bottom: none; }
+
+.info-row span {
+  font-size: 12.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.info-row strong {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 16px;
+  font-weight: 500;
+  text-align: right;
+}
+
+.info-row strong.name-value {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.stamp {
+  display: inline-block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 5px;
+  border: 1px solid currentColor;
+  transform: rotate(-2deg);
+  margin-left: 8px;
+}
+
+.success { color: var(--paid); }
+.danger { color: var(--due); }
+
+/* ---------- Admin: add-student form ---------- */
+
+.grid-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 16px;
+}
+.grid-form > div { min-width: 0; }
+.grid-form button { grid-column: 1 / -1; margin-top: 16px; justify-self: start; }
+
+/* ---------- Admin: students table ---------- */
+
+.table-wrap { overflow-x: auto; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+th {
+  text-align: left;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  font-weight: 600;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+td {
+  padding: 12px 10px;
+  border-bottom: 1px solid var(--border);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13.5px;
+  white-space: nowrap;
+}
+
+td:first-child {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-weight: 500;
+  white-space: normal;
+}
+
+.actions { display: flex; gap: 6px; align-items: center; }
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-card, .card { animation: none; }
+}
+
+@media (max-width: 520px) {
+  .grid-form { grid-template-columns: 1fr; }
+  .topbar { padding: 16px; }
+  .container { padding: 20px 14px 50px; }
+  .card { padding: 20px 18px; }
+}
