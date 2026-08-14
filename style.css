@@ -1,24 +1,25 @@
 /* ============================================================
-   Student Portal — design tokens
-   Theme: an admission-register / ledger card, rendered clean.
+   Shama Henna Classes — Luxury Brand Design Tokens
+   Colors: Rose Gold, Henna Emerald, Soft Ivory Paper
    ============================================================ */
 
 :root {
-  --ink: #1B2420;
-  --primary: #1F4D3E;
-  --primary-dark: #163A2E;
-  --paper: #F3F5F1;
-  --card: #FFFFFF;
-  --muted: #64756B;
-  --border: #DDE3DC;
-  --brass: #B8862E;
-  --due: #A8402F;
-  --due-bg: #FBEEEC;
-  --paid: #1F4D3E;
-  --paid-bg: #EAF1EC;
-  --radius: 16px;
-  --shadow: 0 10px 30px rgba(27, 36, 32, 0.07);
-  --focus: #B8862E;
+  --primary: #9C3349;          /* Henna Rose Wine */
+  --primary-hover: #7E2638;
+  --secondary: #1F4335;        /* Deep Mehndi Green */
+  --gold: #C59B4E;             /* Rose Gold Accent */
+  --gold-light: #F9F4EB;
+  --bg-gradient: linear-gradient(135deg, #FAF7F2 0%, #F5ECE1 100%);
+  --card-bg: rgba(255, 255, 255, 0.95);
+  --card-border: #EFE4D6;
+  --ink: #2C2623;
+  --muted: #796E65;
+  --due: #B83A2E;
+  --due-bg: #FDF1EF;
+  --paid: #1E6B4B;
+  --paid-bg: #EDF7F2;
+  --radius: 20px;
+  --shadow: 0 15px 35px rgba(156, 51, 73, 0.08), 0 5px 15px rgba(0,0,0,0.03);
 }
 
 * { box-sizing: border-box; }
@@ -26,80 +27,127 @@
 html, body {
   margin: 0;
   padding: 0;
+  min-height: 100vh;
 }
 
 body {
-  font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: var(--paper);
+  font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+  background: var(--bg-gradient);
   color: var(--ink);
-  min-height: 100vh;
   -webkit-font-smoothing: antialiased;
 }
 
 h1, h2, h3 {
-  font-family: 'Fraunces', Georgia, serif;
+  margin: 0 0 6px;
   font-weight: 600;
-  margin: 0 0 4px;
-  letter-spacing: -0.01em;
+  color: var(--ink);
 }
 
-p { margin: 0 0 8px; line-height: 1.5; }
+p { margin: 0 0 10px; line-height: 1.5; }
+.muted { color: var(--muted); font-size: 13.5px; }
 
-.muted { color: var(--muted); font-size: 14px; }
-
-a { color: var(--primary); }
-
-:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
+/* ---------- Brand & Header Styling ---------- */
+.top-nav-link {
+  position: absolute;
+  top: 20px;
+  right: 24px;
 }
 
-/* ---------- Auth screens ---------- */
+.nav-switch-btn {
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+  background: #fff;
+  padding: 8px 16px;
+  border-radius: 30px;
+  border: 1px solid var(--card-border);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+  transition: all 0.2s ease;
+}
 
+.nav-switch-btn:hover {
+  background: var(--gold-light);
+  border-color: var(--gold);
+  transform: translateY(-1px);
+}
+
+.brand-header {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.brand-logo {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 6px 20px rgba(197, 155, 78, 0.25);
+  border: 2px solid var(--gold);
+  margin-bottom: 8px;
+  animation: pulseLogo 3s infinite ease-in-out;
+}
+
+.brand-title {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--primary);
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.brand-subtitle {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: var(--gold);
+  display: block;
+  margin-top: 4px;
+}
+
+.divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--card-border), transparent);
+  margin: 18px 0;
+}
+
+/* ---------- Auth Screen ---------- */
 .auth-wrap {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 24px;
+  position: relative;
 }
 
 .auth-card {
   width: 100%;
-  max-width: 380px;
-  background: var(--card);
-  border: 1px solid var(--border);
+  max-width: 400px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 32px 28px 28px;
-  position: relative;
-  animation: rise 0.35s ease;
-}
-
-.auth-card .eyebrow {
-  display: inline-block;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--brass);
-  margin-bottom: 10px;
+  padding: 36px 30px 30px;
+  backdrop-filter: blur(8px);
+  animation: rise 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .auth-card h2 {
-  font-size: 24px;
-  margin-bottom: 6px;
+  font-size: 20px;
+  color: var(--primary);
+  font-weight: 700;
 }
 
-.auth-card .muted {
-  margin-bottom: 22px;
-}
-
+/* ---------- Form Controls ---------- */
 label {
   display: block;
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 12.5px;
+  font-weight: 600;
   color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   margin: 14px 0 6px;
 }
 
@@ -109,169 +157,218 @@ input[type="password"],
 input[type="number"],
 input[type="date"] {
   width: 100%;
-  padding: 11px 13px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  font-size: 15px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--card-border);
+  border-radius: 12px;
+  font-size: 14.5px;
   font-family: inherit;
-  background: #FCFDFC;
+  background: #FCFAF7;
   color: var(--ink);
+  transition: all 0.2s ease;
 }
 
 input:focus {
-  border-color: var(--brass);
+  outline: none;
+  border-color: var(--gold);
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(197, 155, 78, 0.12);
 }
 
+/* ---------- Buttons ---------- */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
   border: none;
-  border-radius: 10px;
-  padding: 11px 18px;
+  border-radius: 12px;
+  padding: 12px 20px;
   font-size: 14px;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
-  transition: background 0.15s ease, transform 0.1s ease;
+  transition: all 0.2s ease;
 }
 
 .btn.primary {
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
   color: #fff;
+  box-shadow: 0 4px 14px rgba(156, 51, 73, 0.25);
 }
-.btn.primary:hover { background: var(--primary-dark); }
+
+.btn.primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(156, 51, 73, 0.35);
+}
 
 .btn.ghost {
-  background: transparent;
-  border: 1px solid var(--border);
+  background: #fff;
+  border: 1.5px solid var(--card-border);
   color: var(--ink);
 }
-.btn.ghost:hover { border-color: var(--primary); }
 
-.btn.danger {
-  background: #fff;
-  border: 1px solid var(--due);
-  color: var(--due);
-}
-.btn.danger:hover { background: var(--due-bg); }
-
-.btn.small { padding: 6px 12px; font-size: 12.5px; }
-.btn.full { width: 100%; margin-top: 18px; }
-
-.error {
-  color: var(--due);
-  font-size: 13.5px;
-  margin-top: 12px;
-  min-height: 1em;
+.btn.ghost:hover {
+  border-color: var(--gold);
+  color: var(--primary);
 }
 
-.status { font-size: 13.5px; margin-top: 12px; min-height: 1em; }
+.btn.full { width: 100%; margin-top: 20px; }
+.btn.small { padding: 6px 12px; font-size: 12px; }
+
+/* ---------- Alerts & Status ---------- */
+.error { color: var(--due); font-size: 13.5px; margin-top: 12px; font-weight: 500; }
+.status { font-size: 13.5px; margin-top: 12px; font-weight: 500; }
 .status.success { color: var(--paid); }
-.status.danger { color: var(--due); }
 
-/* ---------- App shell ---------- */
-
+/* ---------- Top Bar & Shell ---------- */
 .topbar {
-  background: var(--card);
-  border-bottom: 1px solid var(--border);
-  padding: 18px 28px;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--card-border);
+  padding: 16px 32px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.02);
 }
 
-.topbar h1 { font-size: 19px; }
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.topbar-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1.5px solid var(--gold);
+}
+
+.topbar h2 {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 22px;
+  color: var(--primary);
+  margin: 0;
+}
+
+.muted-tag {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.topbar-actions {
+  display: flex;
+  gap: 10px;
+}
 
 .container {
-  max-width: 760px;
+  max-width: 860px;
   margin: 0 auto;
-  padding: 28px 20px 60px;
+  padding: 32px 20px 60px;
 }
 
 .card {
-  background: var(--card);
-  border: 1px solid var(--border);
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 26px 26px 24px;
-  margin-bottom: 22px;
+  padding: 28px;
+  margin-bottom: 24px;
   animation: rise 0.35s ease;
 }
 
-.card h2 {
-  font-size: 18px;
-  margin-bottom: 18px;
+.card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--card-border);
+  padding-bottom: 14px;
 }
 
-/* ---------- Ledger rows (student dashboard) ---------- */
+.card-head h2 {
+  font-size: 18px;
+  color: var(--primary);
+}
 
+.badge {
+  background: var(--gold-light);
+  color: var(--gold);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(197, 155, 78, 0.3);
+}
+
+/* ---------- Student Ledger Cards ---------- */
 .info-row {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 10px;
-  padding: 13px 0;
-  border-bottom: 1px dashed var(--border);
+  padding: 14px 0;
+  border-bottom: 1px dashed var(--card-border);
 }
+
 .info-row:last-child { border-bottom: none; }
 
 .info-row span {
-  font-size: 12.5px;
+  font-size: 13px;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.05em;
   color: var(--muted);
-  white-space: nowrap;
 }
 
 .info-row strong {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 16px;
-  font-weight: 500;
-  text-align: right;
+  font-size: 17px;
+  font-weight: 600;
 }
 
 .info-row strong.name-value {
-  font-family: 'Fraunces', Georgia, serif;
-  font-size: 18px;
-  font-weight: 600;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 24px;
+  color: var(--primary);
 }
 
 .stamp {
   display: inline-block;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 10.5px;
-  letter-spacing: 0.1em;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  padding: 3px 9px;
-  border-radius: 5px;
+  padding: 4px 10px;
+  border-radius: 6px;
   border: 1px solid currentColor;
-  transform: rotate(-2deg);
   margin-left: 8px;
 }
 
-.success { color: var(--paid); }
-.danger { color: var(--due); }
+.success { color: var(--paid); background: var(--paid-bg); }
+.danger { color: var(--due); background: var(--due-bg); }
 
-/* ---------- Admin: add-student form ---------- */
-
+/* ---------- Admin Layout & Table ---------- */
 .grid-form {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 4px 16px;
+  gap: 12px 18px;
 }
-.grid-form > div { min-width: 0; }
-.grid-form button { grid-column: 1 / -1; margin-top: 16px; justify-self: start; }
 
-/* ---------- Admin: students table ---------- */
+.grid-form button {
+  grid-column: 1 / -1;
+  margin-top: 14px;
+  justify-self: start;
+}
 
-.table-wrap { overflow-x: auto; }
+.table-wrap {
+  overflow-x: auto;
+}
 
 table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
 }
 
 th {
@@ -280,40 +377,44 @@ th {
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--muted);
-  font-weight: 600;
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--border);
+  padding: 12px 10px;
+  border-bottom: 2px solid var(--card-border);
   white-space: nowrap;
 }
 
 td {
-  padding: 12px 10px;
-  border-bottom: 1px solid var(--border);
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 13.5px;
+  padding: 14px 10px;
+  border-bottom: 1px solid var(--card-border);
+  font-size: 14px;
   white-space: nowrap;
 }
 
 td:first-child {
-  font-family: 'IBM Plex Sans', sans-serif;
-  font-weight: 500;
-  white-space: normal;
+  font-weight: 600;
+  color: var(--primary);
 }
 
-.actions { display: flex; gap: 6px; align-items: center; }
+.actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
 
+/* ---------- Animations ---------- */
 @keyframes rise {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .auth-card, .card { animation: none; }
+@keyframes pulseLogo {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
 }
 
-@media (max-width: 520px) {
+@media (max-width: 600px) {
   .grid-form { grid-template-columns: 1fr; }
-  .topbar { padding: 16px; }
+  .topbar { padding: 14px 16px; flex-direction: column; gap: 12px; align-items: flex-start; }
+  .topbar-actions { align-self: flex-end; }
   .container { padding: 20px 14px 50px; }
-  .card { padding: 20px 18px; }
+  .auth-card { padding: 26px 20px; }
 }

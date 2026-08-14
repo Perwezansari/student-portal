@@ -3,84 +3,115 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin Panel — Student Portal</title>
+<title>Admin Dashboard — Shama Henna Classes</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div id="loginView" class="auth-wrap">
-  <form id="loginForm" class="auth-card">
-    <span class="eyebrow">Admission Register</span>
-    <h2>Admin Login</h2>
-    <p class="muted">Ye sirf aapke (admin) liye hai — students yahan se login nahi karte.</p>
+  <!-- Top Right Student Portal Link -->
+  <div class="top-nav-link">
+    <a href="index.html" class="nav-switch-btn">👨‍🎓 Student Portal →</a>
+  </div>
 
-    <label for="email">Email</label>
+  <form id="loginForm" class="auth-card">
+    <div class="brand-header">
+      <img src="logo.png" alt="Shama Henna Classes Logo" class="brand-logo" onerror="this.style.display='none'">
+      <h1 class="brand-title">Shama</h1>
+      <span class="brand-subtitle">HENNA CLASSES</span>
+    </div>
+
+    <div class="divider"></div>
+
+    <h2>Admin Portal</h2>
+    <p class="muted">Sirf institute head / instructor ke login ke liye.</p>
+
+    <label for="email">Admin Email</label>
     <input type="email" id="email" required autocomplete="username" placeholder="admin@example.com">
 
-    <label for="password">Password</label>
+    <label for="password">Admin Password</label>
     <input type="password" id="password" required autocomplete="current-password" placeholder="••••••••">
 
-    <button type="submit" class="btn primary full">Login</button>
+    <button type="submit" class="btn primary full">Login to Admin Panel</button>
     <p id="loginError" class="error"></p>
   </form>
 </div>
 
 <div id="dashboardView" style="display:none;">
   <div class="topbar">
-    <h1>Admin Panel</h1>
-    <button id="logoutBtn" class="btn ghost">Logout</button>
+    <div class="topbar-brand">
+      <img src="logo.png" alt="Logo" class="topbar-logo" onerror="this.style.display='none'">
+      <div>
+        <h2>Shama Henna Classes</h2>
+        <span class="muted-tag">Instructor Dashboard</span>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <a href="index.html" class="btn ghost small">View Student Portal</a>
+      <button id="logoutBtn" class="btn ghost">Logout</button>
+    </div>
   </div>
 
   <main class="container">
 
     <div class="card">
-      <h2>Add Student</h2>
+      <div class="card-head">
+        <h2>✨ Add New Student</h2>
+        <span class="badge">Registration Form</span>
+      </div>
       <form id="addStudentForm" class="grid-form">
         <div>
-          <label for="sName">Name</label>
-          <input type="text" id="sName" required>
+          <label for="sName">Student Full Name</label>
+          <input type="text" id="sName" placeholder="e.g. Fatima Khan" required>
         </div>
         <div>
-          <label for="sDate">Admission Date</label>
+          <label for="sDate">Joining / Admission Date</label>
           <input type="date" id="sDate" required>
         </div>
         <div>
-          <label for="sTotal">Total Fee (₹)</label>
-          <input type="number" id="sTotal" min="0" step="1" required>
+          <label for="sTotal">Total Course Fee (₹)</label>
+          <input type="number" id="sTotal" min="0" step="1" placeholder="e.g. 5000" required>
         </div>
         <div>
-          <label for="sPaid">Paid so far (₹)</label>
-          <input type="number" id="sPaid" min="0" step="1" required value="0">
+          <label for="sPaid">Paid Amount (₹)</label>
+          <input type="number" id="sPaid" min="0" step="1" placeholder="0" required value="0">
         </div>
         <div>
-          <label for="sEmail">Student Login Email</label>
-          <input type="email" id="sEmail" required placeholder="rollno1@apnaschool.com">
+          <label for="sEmail">Student Login ID (Email)</label>
+          <input type="email" id="sEmail" required placeholder="student1@henna.com">
         </div>
         <div>
           <label for="sPassword">Student Login Password</label>
-          <input type="text" id="sPassword" required minlength="6" placeholder="kam se kam 6 characters">
+          <input type="text" id="sPassword" required minlength="6" placeholder="Min 6 characters">
         </div>
-        <button type="submit" class="btn primary">Add Student</button>
+        <button type="submit" class="btn primary">Enroll & Save Student</button>
       </form>
       <p id="addStatus" class="status"></p>
     </div>
 
     <div class="card">
-      <h2>Students</h2>
+      <div class="card-head">
+        <h2>📋 Registered Students & Fee Records</h2>
+      </div>
       <p id="permissionError" class="error" style="display:none;">
-        Aapka account admin list mein register nahi hai. README ke Step 6–7 dobara check karein.
+        Aapka account admin list mein register nahi hai. Firebase Console par UID check karein[span_3](start_span)[span_3](end_span).
       </p>
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
-              <th>Name</th><th>Admission</th><th>Total</th><th>Paid</th><th>Due</th><th>Update paid amount</th>
+              <th>Student Name</th>
+              <th>Admission</th>
+              <th>Total Fee</th>
+              <th>Paid Fee</th>
+              <th>Due Balance</th>
+              <th>Quick Update Paid Fee</th>
             </tr>
           </thead>
           <tbody id="studentsBody">
-            <tr><td colspan="6" class="muted">Loading...</td></tr>
+            <tr><td colspan="6" class="muted">Loading students ledger...</td></tr>
           </tbody>
         </table>
       </div>
