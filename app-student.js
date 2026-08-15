@@ -155,7 +155,7 @@ async function loadStudentData(uid) {
   }
 }
 
-// --- Printable Receipt Trigger (Clean & Responsive) ---
+// --- Universal 1-Click PDF Downloader ---
 btnPrintReceipt.addEventListener('click', () => {
   if (!loggedInStudentData) return;
 
@@ -166,6 +166,7 @@ btnPrintReceipt.addEventListener('click', () => {
   const paid = Number(d.paidFee) || 0;
   const due = Math.max(0, net - paid);
 
+  // Fill receipt fields
   document.getElementById('rcptName').textContent = d.name || '-';
   document.getElementById('rcptDate').textContent = formatDate(d.admissionDate);
   document.getElementById('rcptCurrentDate').textContent = new Date().toLocaleDateString('en-IN');
@@ -175,54 +176,39 @@ btnPrintReceipt.addEventListener('click', () => {
   document.getElementById('rcptPaid').textContent = '₹' + paid.toLocaleString('en-IN');
   document.getElementById('rcptDue').textContent = '₹' + due.toLocaleString('en-IN');
 
-  const receiptHtml = document.getElementById('receiptContent').outerHTML;
-  const printWindow = window.open('', '', 'width=800,height=800');
-  
-  printWindow.document.write(`
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Fee Receipt - ${d.name}</title>
-        <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-        <style>
-          * { box-sizing: border-box; }
-          body { 
-            font-family: 'Plus Jakarta Sans', sans-serif; 
-            background: #FAF7F2; 
-            margin: 0; 
-            padding: 20px 12px; 
-            display: flex; 
-            justify-content: center; 
-            align-items: flex-start;
-          }
-          #receiptContent {
-            width: 100% !important;
-            max-width: 480px !important;
-            background: #ffffff !important;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.06) !important;
-            padding: 24px 20px !important;
-            margin: 0 auto !important;
-          }
-          @media print {
-            body { background: #fff; padding: 0; }
-            #receiptContent { box-shadow: none !important; border: 1.5px solid #C59B4E !important; }
-          }
-        </style>
-      </head>
-      <body>
-        ${receiptHtml}
-        <script>
-          window.onload = function() {
-            setTimeout(() => {
-              window.print();
-            }, 300);
-          };
-        <\/script>
-      </body>
-    </html>
-  `);
-  printWindow.document.close();
+  const receiptElement = document.getElementById('receiptContent');
+  const originalDisplay = receiptElement.style.display;
+
+  // Temporarily show element for snapshot
+  receiptElement.style.display = 'block';
+  btnPrintReceipt.disabled = true;
+  btnPrintReceipt.textContent = 'Generating PDF...';
+
+  const cleanName = (d.name || 'Student').replace(/[^a-zA-Z0-9]/g, '_');
+  const opt = {
+    margin:       [10, 10, 10, 10],
+    filename:     Fee_Receipt_${cleanName}.pdf,
+    image:        { type: 'jpeg', quality: 0.98 },
+    html2canvas:  { scale: 2, useCORS: true, logging: false },
+    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+
+  html2pdf()
+    .set(opt)
+    .from(receiptElement)
+    .save()
+    .then(() => {
+      receiptElement.style.display = originalDisplay;
+      btnPrintReceipt.disabled = false;
+      btnPrintReceipt.textContent = '📄 Download / Print Fee Receipt';
+    })
+    .catch((err) => {
+      console.error('PDF Generation Error:', err);
+      receiptElement.style.display = originalDisplay;
+      btnPrintReceipt.disabled = false;
+      btnPrintReceipt.textContent = '📄 Download / Print Fee Receipt';
+      alert('PDF generate nahi ho paya. Dobara try karein.');
+    });
 });
 
 function formatDate(value) {
