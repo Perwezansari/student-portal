@@ -56,6 +56,26 @@
 
   <main class="container">
 
+    <!-- Dashboard Summary Cards -->
+    <div class="summary-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total Students</div>
+        <div class="stat-value" id="statStudents">0</div>
+      </div>
+      <div class="stat-card stat-paid">
+        <div class="stat-label">Total Collected</div>
+        <div class="stat-value success" id="statCollected">₹0</div>
+      </div>
+      <div class="stat-card stat-due">
+        <div class="stat-label">Total Due (Pending)</div>
+        <div class="stat-value danger" id="statDue">₹0</div>
+      </div>
+      <div class="stat-card stat-gold">
+        <div class="stat-label">Total Discount Given</div>
+        <div class="stat-value" style="color: var(--gold);" id="statDiscount">₹0</div>
+      </div>
+    </div>
+
     <div class="card">
       <div class="card-head">
         <h2>✨ Add New Student</h2>
@@ -73,6 +93,10 @@
         <div>
           <label for="sTotal">Total Course Fee (₹)</label>
           <input type="number" id="sTotal" min="0" step="1" placeholder="e.g. 5000" required>
+        </div>
+        <div>
+          <label for="sDiscount">Discount Given (₹)</label>
+          <input type="number" id="sDiscount" min="0" step="1" placeholder="0" value="0">
         </div>
         <div>
           <label for="sPaid">Paid Amount (₹)</label>
@@ -95,9 +119,16 @@
       <div class="card-head">
         <h2>📋 Registered Students & Fee Records</h2>
       </div>
+
+      <!-- Real-time Student Search -->
+      <div class="search-box">
+        <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search student by name or email ID...">
+      </div>
+
       <p id="permissionError" class="error" style="display:none;">
-        Aapka account admin list mein register nahi hai. Firebase Console par UID check karein[span_3](start_span)[span_3](end_span).
+        Aapka account admin list mein register nahi hai. Firebase Console par UID check karein[span_10](start_span)[span_10](end_span).
       </p>
+
       <div class="table-wrap">
         <table>
           <thead>
@@ -105,19 +136,53 @@
               <th>Student Name</th>
               <th>Admission</th>
               <th>Total Fee</th>
+              <th>Discount</th>
               <th>Paid Fee</th>
               <th>Due Balance</th>
-              <th>Quick Update Paid Fee</th>
+              <th>Result</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody id="studentsBody">
-            <tr><td colspan="6" class="muted">Loading students ledger...</td></tr>
+            <tr><td colspan="8" class="muted">Loading students ledger...</td></tr>
           </tbody>
         </table>
       </div>
     </div>
 
   </main>
+</div>
+
+<!-- Modal: Update Result -->
+<div id="resultModal" class="modal-overlay" style="display:none;">
+  <div class="modal-content">
+    <div class="card-head" style="margin-bottom: 12px; padding-bottom: 8px;">
+      <h3 style="color: var(--primary);">📝 Update Exam Result</h3>
+      <button type="button" id="closeResultModal" class="btn ghost small">✕</button>
+    </div>
+    <p id="resultModalStudentName" style="font-weight: 600; color: var(--gold); margin-bottom: 12px;"></p>
+    
+    <form id="resultForm">
+      <input type="hidden" id="resultStudentId">
+      
+      <label for="rMarks">Marks Obtained (e.g. 85/100)</label>
+      <input type="text" id="rMarks" placeholder="e.g. 88/100" required>
+      
+      <label for="rGrade">Grade</label>
+      <input type="text" id="rGrade" placeholder="e.g. A+ / A / B" required>
+      
+      <label for="rStatus">Result Status</label>
+      <select id="rStatus" required>
+        <option value="PASS">PASS</option>
+        <option value="FAIL">FAIL</option>
+      </select>
+      
+      <div style="display: flex; gap: 10px; margin-top: 18px;">
+        <button type="submit" class="btn primary" style="flex: 1;">Save & Publish Result</button>
+        <button type="button" id="btnRemoveResult" class="btn danger small">Unpublish</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-app-compat.js"></script>

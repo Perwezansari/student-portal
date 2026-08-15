@@ -37,7 +37,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, h3 {
+h1, h2, h3, h4 {
   margin: 0 0 6px;
   font-weight: 600;
   color: var(--ink);
@@ -155,7 +155,8 @@ input[type="text"],
 input[type="email"],
 input[type="password"],
 input[type="number"],
-input[type="date"] {
+input[type="date"],
+select {
   width: 100%;
   padding: 12px 14px;
   border: 1.5px solid var(--card-border);
@@ -167,7 +168,7 @@ input[type="date"] {
   transition: all 0.2s ease;
 }
 
-input:focus {
+input:focus, select:focus {
   outline: none;
   border-color: var(--gold);
   background: #fff;
@@ -201,6 +202,15 @@ input:focus {
   box-shadow: 0 6px 18px rgba(156, 51, 73, 0.35);
 }
 
+.btn.secondary-btn {
+  background: #1F4335;
+  color: #fff;
+}
+
+.btn.secondary-btn:hover {
+  background: #163227;
+}
+
 .btn.ghost {
   background: #fff;
   border: 1.5px solid var(--card-border);
@@ -212,6 +222,17 @@ input:focus {
   color: var(--primary);
 }
 
+.btn.danger {
+  background: var(--due-bg);
+  color: var(--due);
+  border: 1px solid var(--due);
+}
+
+.btn.danger:hover {
+  background: var(--due);
+  color: #fff;
+}
+
 .btn.full { width: 100%; margin-top: 20px; }
 .btn.small { padding: 6px 12px; font-size: 12px; }
 
@@ -219,6 +240,7 @@ input:focus {
 .error { color: var(--due); font-size: 13.5px; margin-top: 12px; font-weight: 500; }
 .status { font-size: 13.5px; margin-top: 12px; font-weight: 500; }
 .status.success { color: var(--paid); }
+.status.danger { color: var(--due); }
 
 /* ---------- Top Bar & Shell ---------- */
 .topbar {
@@ -265,7 +287,7 @@ input:focus {
 }
 
 .container {
-  max-width: 860px;
+  max-width: 980px;
   margin: 0 auto;
   padding: 32px 20px 60px;
 }
@@ -304,7 +326,72 @@ input:focus {
   border: 1px solid rgba(197, 155, 78, 0.3);
 }
 
-/* ---------- Student Ledger Cards ---------- */
+/* ---------- Admin Dashboard Summary Cards ---------- */
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  padding: 16px 18px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+  border-left: 4px solid var(--primary);
+}
+
+.stat-card.stat-paid { border-left-color: var(--paid); }
+.stat-card.stat-due { border-left-color: var(--due); }
+.stat-card.stat-gold { border-left-color: var(--gold); }
+
+.stat-label {
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* ---------- Search Bar ---------- */
+.search-box {
+  margin-bottom: 16px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1.5px solid var(--card-border);
+  border-radius: 14px;
+  font-size: 14px;
+  background: #fff;
+}
+
+/* ---------- Student Welcome & Overview ---------- */
+.welcome-banner {
+  background: linear-gradient(135deg, rgba(156, 51, 73, 0.06) 0%, rgba(197, 155, 78, 0.12) 100%);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.welcome-banner h2 {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 28px;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+
 .info-row {
   display: flex;
   align-items: baseline;
@@ -324,13 +411,13 @@ input:focus {
 }
 
 .info-row strong {
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 600;
 }
 
 .info-row strong.name-value {
   font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 24px;
+  font-size: 22px;
   color: var(--primary);
 }
 
@@ -346,8 +433,68 @@ input:focus {
   margin-left: 8px;
 }
 
-.success { color: var(--paid); background: var(--paid-bg); }
-.danger { color: var(--due); background: var(--due-bg); }
+.success { color: var(--paid); }
+.danger { color: var(--due); }
+
+/* ---------- Exam Result Card UI ---------- */
+.result-card-box {
+  background: #FCFAF7;
+  border: 1.5px dashed var(--card-border);
+  border-radius: 16px;
+  padding: 20px;
+  margin-top: 10px;
+}
+
+.result-grid-display {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  text-align: center;
+}
+
+.result-stat-item {
+  background: #fff;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid var(--card-border);
+}
+
+.result-stat-item span {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+
+.result-stat-item strong {
+  font-size: 20px;
+  color: var(--ink);
+}
+
+.badge-pass {
+  background: var(--paid-bg);
+  color: var(--paid);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 13px;
+  display: inline-block;
+  border: 1px solid var(--paid);
+}
+
+.badge-fail {
+  background: var(--due-bg);
+  color: var(--due);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 13px;
+  display: inline-block;
+  border: 1px solid var(--due);
+}
 
 /* ---------- Admin Layout & Table ---------- */
 .grid-form {
@@ -385,7 +532,7 @@ th {
 td {
   padding: 14px 10px;
   border-bottom: 1px solid var(--card-border);
-  font-size: 14px;
+  font-size: 13.5px;
   white-space: nowrap;
 }
 
@@ -398,6 +545,27 @@ td:first-child {
   display: flex;
   gap: 6px;
   align-items: center;
+}
+
+/* Modal Styling for Result Update */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  padding: 20px;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 28px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: var(--shadow);
 }
 
 /* ---------- Animations ---------- */
@@ -413,6 +581,7 @@ td:first-child {
 
 @media (max-width: 600px) {
   .grid-form { grid-template-columns: 1fr; }
+  .result-grid-display { grid-template-columns: 1fr; }
   .topbar { padding: 14px 16px; flex-direction: column; gap: 12px; align-items: flex-start; }
   .topbar-actions { align-self: flex-end; }
   .container { padding: 20px 14px 50px; }

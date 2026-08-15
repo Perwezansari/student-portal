@@ -1,5 +1,5 @@
 // ============================================================
-// Admin portal logic
+// Admin portal logic (Secured + Real-time Search + Summary + Results)
 // ============================================================
 
 const loginView = document.getElementById('loginView');
@@ -11,13 +11,44 @@ const addForm = document.getElementById('addStudentForm');
 const addStatus = document.getElementById('addStatus');
 const studentsBody = document.getElementById('studentsBody');
 const permissionError = document.getElementById('permissionError');
+const searchInput = document.getElementById('searchInput');
 
-auth.onAuthStateChanged((user) => {
+// Result Modal elements
+const resultModal = document.getElementById('resultModal');
+const closeResultModal = document.getElementById('closeResultModal');
+const resultForm = document.getElementById('resultForm');
+const resultStudentId = document.getElementById('resultStudentId');
+const resultModalStudentName = document.getElementById('resultModalStudentName');
+const rMarks = document.getElementById('rMarks');
+const rGrade = document.getElementById('rGrade');
+const rStatus = document.getElementById('rStatus');
+const btnRemoveResult = document.getElementById('btnRemoveResult');
+
+let allStudentsCache = [];
+
+// --- Auth State Verification (Restricts Student UID) ---
+auth.onAuthStateChanged(async (user) => {
   loginError.textContent = '';
   if (user) {
-    loginView.style.display = 'none';
-    dashboardView.style.display = 'block';
-    loadStudents();
+    try {
+      const adminDoc = await db.collection('admins').doc(user.uid).get();
+      if (adminDoc.exists) {
+        loginView.style.display = 'none';
+        dashboardView.style.display = 'block';
+        loadStudents();
+      } else {
+        await auth.signOut();
+        loginError.textContent = 'Access Denied: Sirf Admin account se login kar sakte hain.';
+        alert('Access Denied: Student account se admin dashboard open nahi kiya ja sakta!');
+        loginView.style.display = 'flex';
+        dashboardView.style.display = 'none';
+      }
+    } catch (err) {
+      await auth.signOut();
+      loginError.textContent = 'Verification error. Dobara try karein.';
+      loginView.style.display = 'flex';
+      dashboardView.style.display = 'none';
+    }
   } else {
     loginView.style.display = 'flex';
     dashboardView.style.display = 'none';
@@ -43,12 +74,7 @@ loginForm.addEventListener('submit', async (e) => {
 
 logoutBtn.addEventListener('click', () => auth.signOut());
 
-// --- Add student -------------------------------------------------
-// Naya login banane ke liye ek "secondary" Firebase app instance
-// use karte hain, taaki admin ka apna session logged-in rahe
-// (warna createUserWithEmailAndPassword khud admin ko sign out
-// karke naye student ke account mein switch kar deta).
-
+// --- Add Student Logic ---
 addForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const submitBtn = addForm.querySelector('button');
@@ -59,6 +85,7 @@ addForm.addEventListener('submit', async (e) => {
   const name = document.getElementById('sName').value.trim();
   const admissionDate = document.getElementById('sDate').value;
   const totalFee = Number(document.getElementById('sTotal').value) || 0;
+  const discount = Number(document.getElementById('sDiscount').value) || 0;
   const paidFee = Number(document.getElementById('sPaid').value) || 0;
   const email = document.getElementById('sEmail').value.trim();
   const password = document.getElementById('sPassword').value;
@@ -73,12 +100,19 @@ addForm.addEventListener('submit', async (e) => {
     secondaryApp = null;
 
     await db.collection('students').doc(uid).set({
-      name, admissionDate, totalFee, paidFee
+      name,
+      admissionDate,
+      totalFee,
+      discount,
+      paidFee,
+      email,
+      result: null
     });
 
-    addStatus.textContent = `"${name}" add ho gaya. Login diya: ${email}`;
+    addStatus.textContent = `"${name}" enroll ho gaya! Login ID: ${email}`;
     addStatus.className = 'status success';
     addForm.reset();
+    document.getElementById('sDiscount').value = 0;
     document.getElementById('sPaid').value = 0;
     loadStudents();
   } catch (err) {
@@ -90,69 +124,173 @@ addForm.addEventListener('submit', async (e) => {
   }
 });
 
-// --- List + update students ---------------------------------------
-
+// --- Fetch & Render Students ---
 async function loadStudents() {
   permissionError.style.display = 'none';
-  studentsBody.innerHTML = '<tr><td colspan="6" class="muted">Loading...</td></tr>';
+  studentsBody.innerHTML = '<tr><td colspan="8" class="muted">Loading students ledger...</td></tr>';
   try {
     const snap = await db.collection('students').orderBy('name').get();
-    if (snap.empty) {
-      studentsBody.innerHTML = '<tr><td colspan="6" class="muted">Abhi koi student add nahi hua.</td></tr>';
-      return;
-    }
-    studentsBody.innerHTML = '';
-    snap.forEach((doc) => studentsBody.appendChild(renderRow(doc)));
+    allStudentsCache = [];
+    snap.forEach((doc) => {
+      allStudentsCache.push({ id: doc.id, ...doc.data() });
+    });
+
+    updateSummaryCards(allStudentsCache);
+    renderTable(allStudentsCache);
   } catch (err) {
     studentsBody.innerHTML = '';
     permissionError.style.display = 'block';
   }
 }
 
-function renderRow(doc) {
-  const d = doc.data();
-  const total = Number(d.totalFee) || 0;
-  const paid = Number(d.paidFee) || 0;
-  const due = total - paid;
+// Update Top Stat Cards
+function updateSummaryCards(students) {
+  let totalStudents = students.length;
+  let totalPaid = 0;
+  let totalDue = 0;
+  let totalDiscount = 0;
 
-  const tr = document.createElement('tr');
-  tr.innerHTML = `
-    <td>${escapeHtml(d.name || '-')}</td>
-    <td>${d.admissionDate || '-'}</td>
-    <td>₹${total.toLocaleString('en-IN')}</td>
-    <td>₹${paid.toLocaleString('en-IN')}</td>
-    <td class="${due > 0 ? 'danger' : 'success'}">₹${due.toLocaleString('en-IN')}</td>
-    <td class="actions">
-      <input type="number" class="paidInput" min="0" step="1" placeholder="New paid ₹" style="width:100px">
-      <button class="btn small primary updateBtn" type="button">Save</button>
-      <button class="btn small danger removeBtn" type="button">Remove</button>
-    </td>
-  `;
+  students.forEach((s) => {
+    const total = Number(s.totalFee) || 0;
+    const disc = Number(s.discount) || 0;
+    const paid = Number(s.paidFee) || 0;
+    const net = Math.max(0, total - disc);
+    const due = Math.max(0, net - paid);
 
-  tr.querySelector('.updateBtn').addEventListener('click', async () => {
-    const val = tr.querySelector('.paidInput').value;
-    if (val === '') return;
-    await db.collection('students').doc(doc.id).update({ paidFee: Number(val) });
-    loadStudents();
+    totalPaid += paid;
+    totalDue += due;
+    totalDiscount += disc;
   });
 
-  tr.querySelector('.removeBtn').addEventListener('click', async () => {
-    const ok = confirm(
-      `"${d.name}" ka record remove karein?\n\n` +
-      `Note: isse sirf unka fee record hatega. Unka login (Authentication) active rahega ` +
-      `— use bhi hatane ke liye Firebase Console > Authentication mein jaakar manually delete karein.`
-    );
-    if (!ok) return;
-    await db.collection('students').doc(doc.id).delete();
-    loadStudents();
-  });
-
-  return tr;
+  document.getElementById('statStudents').textContent = totalStudents;
+  document.getElementById('statCollected').textContent = '₹' + totalPaid.toLocaleString('en-IN');
+  document.getElementById('statDue').textContent = '₹' + totalDue.toLocaleString('en-IN');
+  document.getElementById('statDiscount').textContent = '₹' + totalDiscount.toLocaleString('en-IN');
 }
+
+// Render Table Rows
+function renderTable(students) {
+  if (students.length === 0) {
+    studentsBody.innerHTML = '<tr><td colspan="8" class="muted">Koi record nahi mila.</td></tr>';
+    return;
+  }
+
+  studentsBody.innerHTML = '';
+  students.forEach((d) => {
+    const total = Number(d.totalFee) || 0;
+    const discount = Number(d.discount) || 0;
+    const paid = Number(d.paidFee) || 0;
+    const net = Math.max(0, total - discount);
+    const due = Math.max(0, net - paid);
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>
+        <strong>${escapeHtml(d.name || '-')}</strong>
+        <div style="font-size:11px; color:var(--muted);">${escapeHtml(d.email || '')}</div>
+      </td>
+      <td>${d.admissionDate || '-'}</td>
+      <td>₹${total.toLocaleString('en-IN')}</td>
+      <td style="color:var(--gold); font-weight:600;">₹${discount.toLocaleString('en-IN')}</td>
+      <td class="success">₹${paid.toLocaleString('en-IN')}</td>
+      <td class="${due > 0 ? 'danger' : 'success'}" style="font-weight:700;">₹${due.toLocaleString('en-IN')}</td>
+      <td>
+        ${d.result && d.result.isPublished ? 
+          `<span class="stamp ${d.result.status === 'PASS' ? 'success' : 'danger'}">${d.result.marks} (${d.result.grade})</span>` : 
+          `<span class="muted" style="font-size:12px;">Not Set</span>`}
+      </td>
+      <td class="actions">
+        <input type="number" class="paidInput" min="0" step="1" placeholder="₹ Paid" style="width:85px; padding:6px 8px; font-size:12px;">
+        <button class="btn small primary updateBtn" type="button">Save</button>
+        <button class="btn small ghost resultBtn" type="button">📝 Result</button>
+        <button class="btn small danger removeBtn" type="button">✕</button>
+      </td>
+    `;
+
+    // Save Paid Fee
+    tr.querySelector('.updateBtn').addEventListener('click', async () => {
+      const val = tr.querySelector('.paidInput').value;
+      if (val === '') return;
+      await db.collection('students').doc(d.id).update({ paidFee: Number(val) });
+      loadStudents();
+    });
+
+    // Open Result Modal
+    tr.querySelector('.resultBtn').addEventListener('click', () => {
+      openResultEditor(d);
+    });
+
+    // Remove Student Record
+    tr.querySelector('.removeBtn').addEventListener('click', async () => {
+      const ok = confirm(`"${d.name}" ka record delete karein?`);
+      if (!ok) return;
+      await db.collection('students').doc(d.id).delete();
+      loadStudents();
+    });
+
+    studentsBody.appendChild(tr);
+  });
+}
+
+// Live Search Input Listener
+searchInput.addEventListener('input', (e) => {
+  const query = e.target.value.toLowerCase().trim();
+  const filtered = allStudentsCache.filter((s) => {
+    const nameMatch = (s.name || '').toLowerCase().includes(query);
+    const emailMatch = (s.email || '').toLowerCase().includes(query);
+    return nameMatch || emailMatch;
+  });
+  renderTable(filtered);
+});
+
+// --- Result Modal Management ---
+function openResultEditor(student) {
+  resultStudentId.value = student.id;
+  resultModalStudentName.textContent = `Student: ${student.name}`;
+  if (student.result && student.result.isPublished) {
+    rMarks.value = student.result.marks || '';
+    rGrade.value = student.result.grade || '';
+    rStatus.value = student.result.status || 'PASS';
+  } else {
+    rMarks.value = '';
+    rGrade.value = '';
+    rStatus.value = 'PASS';
+  }
+  resultModal.style.display = 'flex';
+}
+
+closeResultModal.addEventListener('click', () => {
+  resultModal.style.display = 'none';
+});
+
+resultForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const id = resultStudentId.value;
+  await db.collection('students').doc(id).update({
+    result: {
+      marks: rMarks.value.trim(),
+      grade: rGrade.value.trim().toUpperCase(),
+      status: rStatus.value,
+      isPublished: true
+    }
+  });
+  resultModal.style.display = 'none';
+  loadStudents();
+});
+
+btnRemoveResult.addEventListener('click', async () => {
+  const id = resultStudentId.value;
+  if (!confirm('Exam result unpublish/delete karein?')) return;
+  await db.collection('students').doc(id).update({
+    result: null
+  });
+  resultModal.style.display = 'none';
+  loadStudents();
+});
 
 function friendlyError(code) {
   switch (code) {
-    case 'auth/email-already-in-use': return 'Ye login email pehle se use ho raha hai.';
+    case 'auth/email-already-in-use': return 'Ye email pehle se use ho raha hai.';
     case 'auth/invalid-email': return 'Email sahi format mein nahi hai.';
     case 'auth/weak-password': return 'Password kam se kam 6 characters ka hona chahiye.';
     case 'auth/user-not-found':

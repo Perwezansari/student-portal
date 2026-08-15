@@ -1,5 +1,5 @@
 // ============================================================
-// Student portal logic
+// Student portal logic (Welcome + Discount + Receipt + Results)
 // ============================================================
 
 const loginView = document.getElementById('loginView');
@@ -8,6 +8,11 @@ const loginForm = document.getElementById('loginForm');
 const loginError = document.getElementById('loginError');
 const logoutBtn = document.getElementById('logoutBtn');
 const dashboardContent = document.getElementById('dashboardContent');
+const welcomeStudentName = document.getElementById('welcomeStudentName');
+const resultSectionContent = document.getElementById('resultSectionContent');
+const btnPrintReceipt = document.getElementById('btnPrintReceipt');
+
+let loggedInStudentData = null;
 
 auth.onAuthStateChanged(async (user) => {
   loginError.textContent = '';
@@ -41,7 +46,7 @@ loginForm.addEventListener('submit', async (e) => {
 logoutBtn.addEventListener('click', () => auth.signOut());
 
 async function loadStudentData(uid) {
-  dashboardContent.innerHTML = '<p class="muted">Loading...</p>';
+  dashboardContent.innerHTML = '<p class="muted">Loading records...</p>';
   try {
     const doc = await db.collection('students').doc(uid).get();
     if (!doc.exists) {
@@ -49,15 +54,26 @@ async function loadStudentData(uid) {
         '<p class="muted">Aapka record abhi nahi mila. Apne admin/teacher se sampark karein.</p>';
       return;
     }
+
     const d = doc.data();
+    loggedInStudentData = d;
+
+    // Welcome Greeting Name
+    if (d.name) {
+      welcomeStudentName.textContent = d.name;
+    }
+
     const total = Number(d.totalFee) || 0;
+    const discount = Number(d.discount) || 0;
+    const netPayable = Math.max(0, total - discount);
     const paid = Number(d.paidFee) || 0;
-    const due = total - paid;
+    const due = Math.max(0, netPayable - paid);
     const admissionDate = formatDate(d.admissionDate);
 
+    // Render Ledger
     dashboardContent.innerHTML = `
       <div class="info-row">
-        <span>Name</span>
+        <span>Student Name</span>
         <strong class="name-value">${escapeHtml(d.name || '-')}</strong>
       </div>
       <div class="info-row">
@@ -65,26 +81,109 @@ async function loadStudentData(uid) {
         <strong>${admissionDate}</strong>
       </div>
       <div class="info-row">
-        <span>Total Fee</span>
+        <span>Total Course Fee</span>
         <strong>₹${total.toLocaleString('en-IN')}</strong>
       </div>
       <div class="info-row">
-        <span>Paid</span>
+        <span>Discount Concession</span>
+        <strong style="color: var(--gold);">-₹${discount.toLocaleString('en-IN')}</strong>
+      </div>
+      <div class="info-row">
+        <span>Net Payable Fee</span>
+        <strong>₹${netPayable.toLocaleString('en-IN')}</strong>
+      </div>
+      <div class="info-row">
+        <span>Amount Paid</span>
         <strong class="success">₹${paid.toLocaleString('en-IN')}</strong>
       </div>
       <div class="info-row">
-        <span>Due</span>
+        <span>Due Balance</span>
         <strong class="${due > 0 ? 'danger' : 'success'}">
           ₹${due.toLocaleString('en-IN')}
           <span class="stamp ${due > 0 ? 'danger' : 'success'}">${due > 0 ? 'Due' : 'Cleared'}</span>
         </strong>
       </div>
     `;
+
+    // Render Result Section (Marks, Grade, Pass/Fail)
+    if (d.result && d.result.isPublished) {
+      resultSectionContent.innerHTML = `
+        <div class="result-card-box">
+          <div class="result-grid-display">
+            <div class="result-stat-item">
+              <span>Marks Obtained</span>
+              <strong>${escapeHtml(d.result.marks || '-')}</strong>
+            </div>
+            <div class="result-stat-item">
+              <span>Grade</span>
+              <strong style="color: var(--gold);">${escapeHtml(d.result.grade || '-')}</strong>
+            </div>
+            <div class="result-stat-item">
+              <span>Status</span>
+              <div>
+                <span class="${d.result.status === 'PASS' ? 'badge-pass' : 'badge-fail'}">
+                  ${escapeHtml(d.result.status || 'PASS')}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    } else {
+      resultSectionContent.innerHTML = `
+        <div class="result-card-box" style="text-align: center; color: var(--muted); padding: 24px;">
+          <p style="font-size: 15px; margin: 0;">⏳ <strong>Abhi result ghoshit nahi kiya gaya hai.</strong></p>
+          <span style="font-size: 12px;">Exam hone ke baad instructor dwara result yahan update kiya jayega.</span>
+        </div>
+      `;
+    }
+
   } catch (err) {
     dashboardContent.innerHTML =
       '<p class="muted">Data load nahi ho paya. Page refresh karke dobara try karein.</p>';
   }
 }
+
+// --- Printable Receipt Trigger ---
+btnPrintReceipt.addEventListener('click', () => {
+  if (!loggedInStudentData) return;
+
+  const d = loggedInStudentData;
+  const total = Number(d.totalFee) || 0;
+  const discount = Number(d.discount) || 0;
+  const net = Math.max(0, total - discount);
+  const paid = Number(d.paidFee) || 0;
+  const due = Math.max(0, net - paid);
+
+  document.getElementById('rcptName').textContent = d.name || '-';
+  document.getElementById('rcptDate').textContent = formatDate(d.admissionDate);
+  document.getElementById('rcptCurrentDate').textContent = new Date().toLocaleDateString('en-IN');
+  document.getElementById('rcptTotal').textContent = '₹' + total.toLocaleString('en-IN');
+  document.getElementById('rcptDiscount').textContent = '-₹' + discount.toLocaleString('en-IN');
+  document.getElementById('rcptNet').textContent = '₹' + net.toLocaleString('en-IN');
+  document.getElementById('rcptPaid').textContent = '₹' + paid.toLocaleString('en-IN');
+  document.getElementById('rcptDue').textContent = '₹' + due.toLocaleString('en-IN');
+
+  const receiptHtml = document.getElementById('receiptContent').outerHTML;
+  const printWindow = window.open('', '', 'width=750,height=750');
+  printWindow.document.write(`
+    <html>
+      <head>
+        <title>Fee Receipt - ${d.name}</title>
+        <style>
+          body { font-family: sans-serif; padding: 20px; display: flex; justify-content: center; }
+        </style>
+      </head>
+      <body>
+        ${receiptHtml}
+        <script>
+          window.onload = function() { window.print(); window.close(); }
+        <\/script>
+      </body>
+    </html>
+  `);
+  printWindow.document.close();
+});
 
 function formatDate(value) {
   if (!value) return '-';

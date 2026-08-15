@@ -36,9 +36,10 @@
 
     <button type="submit" class="btn primary full">Login to Dashboard</button>
     <p id="loginError" class="error"></p>
+    
     <div style="text-align: center; margin-top: 18px; font-size: 11px; color: var(--muted); letter-spacing: 0.05em; border-top: 1px dashed var(--card-border); padding-top: 12px;">
-  Developed by <strong style="color: var(--primary);">Perwez</strong>
-</div>
+      Developed by <strong style="color: var(--primary);">Perwez</strong>
+    </div>
   </form>
 </div>
 
@@ -48,17 +49,94 @@
       <img src="logo.png" alt="Logo" class="topbar-logo" onerror="this.style.display='none'">
       <div>
         <h2>Shama Henna Classes</h2>
-        <span class="muted-tag">Student Fee Register</span>
+        <span class="muted-tag">Student Portal</span>
       </div>
     </div>
     <button id="logoutBtn" class="btn ghost">Logout</button>
   </div>
 
   <main class="container">
-    <div class="card" id="dashboardContent">
-      <p class="muted">Loading student records...</p>
+    
+    <!-- Welcome Header Banner -->
+    <div class="welcome-banner">
+      <h2>Welcome back, <span id="welcomeStudentName">Student</span>! 👋</h2>
+      <p class="muted" style="margin: 0;">Yahan aap apni fees aur exam result ki complete detail check kar sakte hain.</p>
     </div>
+
+    <!-- Fee Details Card -->
+    <div class="card">
+      <div class="card-head">
+        <h2>💳 Fee & Admission Overview</h2>
+        <span class="badge">Official Ledger</span>
+      </div>
+      <div id="dashboardContent">
+        <p class="muted">Loading records...</p>
+      </div>
+      
+      <div style="margin-top: 20px; border-top: 1px solid var(--card-border); padding-top: 16px; text-align: right;">
+        <button id="btnPrintReceipt" class="btn secondary-btn">📄 Download / Print Fee Receipt</button>
+      </div>
+    </div>
+
+    <!-- Exam Result Card -->
+    <div class="card">
+      <div class="card-head">
+        <h2>🏆 Exam Performance & Result</h2>
+      </div>
+      <div id="resultSectionContent">
+        <p class="muted">Checking exam records...</p>
+      </div>
+    </div>
+
   </main>
+</div>
+
+<!-- Hidden Printable Receipt Template -->
+<div id="receiptTemplate" style="display:none;">
+  <div id="receiptContent" style="font-family: 'Plus Jakarta Sans', sans-serif; padding: 30px; border: 2px solid #C59B4E; border-radius: 12px; max-width: 550px; margin: 0 auto; color: #2C2623;">
+    <div style="text-align: center; border-bottom: 2px solid #EFE4D6; padding-bottom: 14px; margin-bottom: 16px;">
+      <h1 style="font-family: Georgia, serif; font-size: 26px; color: #9C3349; margin: 0;">Shama Henna Classes</h1>
+      <span style="font-size: 11px; letter-spacing: 0.2em; color: #C59B4E; font-weight: bold;">OFFICIAL FEE RECEIPT</span>
+    </div>
+    
+    <table style="width: 100%; font-size: 13.5px; line-height: 1.8; margin-bottom: 16px;">
+      <tr><td><strong>Student Name:</strong></td><td id="rcptName" style="text-align: right;">-</td></tr>
+      <tr><td><strong>Admission Date:</strong></td><td id="rcptDate" style="text-align: right;">-</td></tr>
+      <tr><td><strong>Receipt Date:</strong></td><td id="rcptCurrentDate" style="text-align: right;">-</td></tr>
+    </table>
+
+    <table style="width: 100%; border-collapse: collapse; font-size: 13.5px; margin-top: 10px;">
+      <tr style="background: #F9F4EB; border-top: 1px solid #EFE4D6; border-bottom: 1px solid #EFE4D6;">
+        <th style="padding: 8px; text-align: left;">Description</th>
+        <th style="padding: 8px; text-align: right;">Amount</th>
+      </tr>
+      <tr>
+        <td style="padding: 8px;">Course Total Fee</td>
+        <td style="padding: 8px; text-align: right;" id="rcptTotal">₹0</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px; color: #C59B4E;">Special Discount / Concession</td>
+        <td style="padding: 8px; text-align: right; color: #C59B4E;" id="rcptDiscount">-₹0</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px; font-weight: bold;">Net Payable Fee</td>
+        <td style="padding: 8px; text-align: right; font-weight: bold;" id="rcptNet">₹0</td>
+      </tr>
+      <tr style="border-top: 1px dashed #EFE4D6;">
+        <td style="padding: 8px; color: #1E6B4B; font-weight: bold;">Total Amount Paid</td>
+        <td style="padding: 8px; text-align: right; color: #1E6B4B; font-weight: bold;" id="rcptPaid">₹0</td>
+      </tr>
+      <tr style="border-top: 1.5px solid #2C2623; border-bottom: 1.5px solid #2C2623;">
+        <td style="padding: 8px; font-weight: bold;">Remaining Balance (Due)</td>
+        <td style="padding: 8px; text-align: right; font-weight: bold;" id="rcptDue">₹0</td>
+      </tr>
+    </table>
+
+    <div style="margin-top: 24px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 11px; color: #796E65;">
+      <div>Status: <strong id="rcptStatus" style="color: #1E6B4B;">VERIFIED & ACTIVE</strong></div>
+      <div style="text-align: center; border-top: 1px solid #796E65; padding-top: 4px; width: 140px;">Authorized Signature</div>
+    </div>
+  </div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-app-compat.js"></script>
