@@ -1,5 +1,5 @@
 // ============================================================
-// Student portal logic (Universal Native Receipt & Auth)
+// Student Portal Logic (Fast Login + Multi-Device Clean Receipt)
 // ============================================================
 
 const loginView = document.getElementById('loginView');
@@ -14,6 +14,9 @@ const btnPrintReceipt = document.getElementById('btnPrintReceipt');
 
 let loggedInStudentData = null;
 
+// Background Persistence Initialization (Login delay khatam karne ke liye)
+auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(() => {});
+
 // --- Auth State Verification ---
 auth.onAuthStateChanged(async (user) => {
   loginError.textContent = '';
@@ -27,31 +30,34 @@ auth.onAuthStateChanged(async (user) => {
   }
 });
 
-// --- Login Handler ---
+// --- Instant Fast Login Handler ---
 loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   loginError.textContent = '';
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
   const btn = loginForm.querySelector('button');
+  const originalText = btn.textContent;
+
   btn.disabled = true;
+  btn.textContent = 'Verifying...';
+
   try {
-    await auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
     await auth.signInWithEmailAndPassword(email, password);
   } catch (err) {
-    loginError.textContent = friendlyError(err.code) || 'Login nahi ho paya.';
-  } finally {
     btn.disabled = false;
+    btn.textContent = originalText;
+    loginError.textContent = friendlyError(err.code) || 'Login nahi ho paya.';
   }
 });
 
 logoutBtn.addEventListener('click', () => auth.signOut());
 
-// --- Load Student Data ---
+// --- Load Student Dashboard ---
 async function loadStudentData(uid) {
   try {
     const doc = await db.collection('students').doc(uid).get();
-    
+
     if (!doc.exists) {
       await auth.signOut();
       loginError.textContent = 'Yeh account Student list mein nahi hai. Kripya Student ID se login karein.';
@@ -75,6 +81,7 @@ async function loadStudentData(uid) {
     const due = Math.max(0, netPayable - paid);
     const admissionDate = formatDate(d.admissionDate);
 
+    // Render Ledger Rows
     dashboardContent.innerHTML = `
       <div class="info-row">
         <span>Student Name</span>
@@ -109,6 +116,7 @@ async function loadStudentData(uid) {
       </div>
     `;
 
+    // Render Result Section
     if (d.result && d.result.isPublished) {
       resultSectionContent.innerHTML = `
         <div class="result-card-box">
@@ -140,7 +148,6 @@ async function loadStudentData(uid) {
         </div>
       `;
     }
-
   } catch (err) {
     await auth.signOut();
     dashboardView.style.display = 'none';
@@ -149,7 +156,7 @@ async function loadStudentData(uid) {
   }
 }
 
-// --- Universal Native Receipt (Works on iOS, Android & Desktop) ---
+// --- Universal Direct Receipt (Zero Library Crash / No Blank Apple Page) ---
 btnPrintReceipt.addEventListener('click', () => {
   if (!loggedInStudentData) return;
 
@@ -163,9 +170,8 @@ btnPrintReceipt.addEventListener('click', () => {
   const todayDate = new Date().toLocaleDateString('en-IN');
 
   const receiptWindow = window.open('', '_blank');
-
   if (!receiptWindow) {
-    alert('Pop-up block ho gaya hai. Kripya browser setting me Pop-ups allow karein.');
+    alert('Pop-up block ho gaya hai. Browser me pop-ups allow karein.');
     return;
   }
 
@@ -182,16 +188,16 @@ btnPrintReceipt.addEventListener('click', () => {
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
           font-family: 'Plus Jakarta Sans', sans-serif;
-          background-color: #FAF7F2;
+          background: #FAF7F2;
           color: #2D2424;
-          padding: 20px 12px;
+          padding: 24px 12px;
           display: flex;
           flex-direction: column;
           align-items: center;
         }
         .action-bar {
           width: 100%;
-          max-width: 520px;
+          max-width: 500px;
           display: flex;
           gap: 10px;
           margin-bottom: 16px;
@@ -206,11 +212,10 @@ btnPrintReceipt.addEventListener('click', () => {
           font-size: 15px;
           font-weight: 700;
           cursor: pointer;
-          box-shadow: 0 2px 8px rgba(120,32,43,0.25);
         }
         .btn-close {
-          padding: 12px 18px;
-          background: #e2dcd5;
+          padding: 12px 20px;
+          background: #E8E2D9;
           color: #333;
           border: none;
           border-radius: 8px;
@@ -220,8 +225,8 @@ btnPrintReceipt.addEventListener('click', () => {
         }
         .receipt-card {
           width: 100%;
-          max-width: 520px;
-          background: #ffffff;
+          max-width: 500px;
+          background: #fff;
           border: 2px solid #C49A45;
           border-radius: 12px;
           padding: 28px 24px;
@@ -230,14 +235,13 @@ btnPrintReceipt.addEventListener('click', () => {
         .header {
           text-align: center;
           border-bottom: 2px solid #F0EAE1;
-          padding-bottom: 16px;
+          padding-bottom: 14px;
           margin-bottom: 18px;
         }
         .brand-title {
           color: #78202B;
           font-size: 22px;
           font-weight: 800;
-          letter-spacing: 0.5px;
         }
         .brand-sub {
           font-size: 11px;
@@ -254,7 +258,7 @@ btnPrintReceipt.addEventListener('click', () => {
         }
         .meta-table td {
           padding: 6px 0;
-          font-size: 13px;
+          font-size: 13.5px;
         }
         .meta-label { color: #7A6E65; font-weight: 600; }
         .meta-val { text-align: right; font-weight: 700; color: #111; }
@@ -269,29 +273,25 @@ btnPrintReceipt.addEventListener('click', () => {
         }
         .data-table th.right, .data-table td.right { text-align: right; }
         .data-table td {
-          padding: 10px 10px;
+          padding: 9px 10px;
           font-size: 13.5px;
           border-bottom: 1px dashed #F0EAE1;
         }
-        .due-row {
-          background: #FFF9F9;
-          font-weight: 800;
-        }
         .due-row td {
           color: ${due > 0 ? '#B22222' : '#2E7D32'};
+          font-weight: 800;
+          font-size: 15px;
           border-top: 1.5px solid #EADBCC;
           border-bottom: 1.5px solid #EADBCC;
-          font-size: 15px;
+          background: #FFF9F9;
         }
         .footer {
           display: flex;
           justify-content: space-between;
           align-items: flex-end;
           margin-top: 24px;
-          padding-top: 12px;
         }
         .status-badge {
-          display: inline-block;
           font-size: 11px;
           font-weight: 700;
           padding: 4px 8px;
@@ -387,15 +387,6 @@ btnPrintReceipt.addEventListener('click', () => {
           </div>
         </div>
       </div>
-
-      <script>
-        // Auto trigger print dialog smoothly on desktop
-        window.addEventListener('load', () => {
-          if (!/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-            setTimeout(() => { window.print(); }, 400);
-          }
-        });
-      <\/script>
     </body>
     </html>
   `);

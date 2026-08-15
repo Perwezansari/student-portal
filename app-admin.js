@@ -1,5 +1,5 @@
 // ============================================================
-// Admin portal logic (Secured + Real-time Search + Summary + Results)
+// Admin Portal Logic (Instant Login + Fast Ledger CRUD)
 // ============================================================
 
 const loginView = document.getElementById('loginView');
@@ -26,7 +26,10 @@ const btnRemoveResult = document.getElementById('btnRemoveResult');
 
 let allStudentsCache = [];
 
-// --- Auth State Verification (Restricts Student UID) ---
+// Background Persistence Initialization (No latency on submit)
+auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(() => {});
+
+// --- Auth State Verification ---
 auth.onAuthStateChanged(async (user) => {
   loginError.textContent = '';
   if (user) {
@@ -56,20 +59,24 @@ auth.onAuthStateChanged(async (user) => {
   }
 });
 
+// --- Instant Fast Login Handler ---
 loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   loginError.textContent = '';
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
   const btn = loginForm.querySelector('button');
+  const originalText = btn.textContent;
+
   btn.disabled = true;
+  btn.textContent = 'Verifying...';
+
   try {
-    await auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
     await auth.signInWithEmailAndPassword(email, password);
   } catch (err) {
-    loginError.textContent = friendlyError(err.code) || 'Login nahi ho paya.';
-  } finally {
     btn.disabled = false;
+    btn.textContent = originalText;
+    loginError.textContent = friendlyError(err.code) || 'Login nahi ho paya.';
   }
 });
 
@@ -128,7 +135,7 @@ addForm.addEventListener('submit', async (e) => {
 // --- Fetch & Render Students ---
 async function loadStudents() {
   permissionError.style.display = 'none';
-  studentsBody.innerHTML = '<tr><td colspan="8" class="muted">Loading students ledger...</td></tr>';
+  studentsBody.innerHTML = '<tr><td colspan="8" class="muted">Loading ledger...</td></tr>';
   try {
     const snap = await db.collection('students').orderBy('name').get();
     allStudentsCache = [];
@@ -292,7 +299,7 @@ function friendlyError(code) {
     case 'auth/invalid-credential': return 'Email ya password galat hai.';
     case 'auth/too-many-requests': return 'Bahut zyada attempts ho gaye. Thodi der baad try karein.';
     case 'auth/network-request-failed': return 'Internet connection check karein.';
-    default: return null;
+    default: return 'Login nahi ho paya. Dobara try karein.';
   }
 }
 
