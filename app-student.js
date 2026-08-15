@@ -1,5 +1,5 @@
 // ============================================================
-// Student portal logic (Strict Verification + Universal PDF Download)
+// Student portal logic (Strict Verification + Full PDF Download)
 // ============================================================
 
 const loginView = document.getElementById('loginView');
@@ -27,6 +27,7 @@ auth.onAuthStateChanged(async (user) => {
   }
 });
 
+// --- Login Form Handler ---
 loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   loginError.textContent = '';
@@ -46,6 +47,7 @@ loginForm.addEventListener('submit', async (e) => {
 
 logoutBtn.addEventListener('click', () => auth.signOut());
 
+// --- Fetch & Render Student Dashboard ---
 async function loadStudentData(uid) {
   try {
     const doc = await db.collection('students').doc(uid).get();
@@ -73,6 +75,7 @@ async function loadStudentData(uid) {
     const due = Math.max(0, netPayable - paid);
     const admissionDate = formatDate(d.admissionDate);
 
+    // Ledger Rows
     dashboardContent.innerHTML = `
       <div class="info-row">
         <span>Student Name</span>
@@ -107,6 +110,7 @@ async function loadStudentData(uid) {
       </div>
     `;
 
+    // Exam Result Section
     if (d.result && d.result.isPublished) {
       resultSectionContent.innerHTML = `
         <div class="result-card-box">
@@ -147,7 +151,7 @@ async function loadStudentData(uid) {
   }
 }
 
-// --- Universal 1-Click PDF Downloader ---
+// --- Universal 1-Click Complete PDF Downloader ---
 btnPrintReceipt.addEventListener('click', () => {
   if (!loggedInStudentData) return;
 
@@ -158,6 +162,7 @@ btnPrintReceipt.addEventListener('click', () => {
   const paid = Number(d.paidFee) || 0;
   const due = Math.max(0, net - paid);
 
+  // Fill receipt content
   document.getElementById('rcptName').textContent = d.name || '-';
   document.getElementById('rcptDate').textContent = formatDate(d.admissionDate);
   document.getElementById('rcptCurrentDate').textContent = new Date().toLocaleDateString('en-IN');
@@ -168,9 +173,21 @@ btnPrintReceipt.addEventListener('click', () => {
   document.getElementById('rcptDue').textContent = '₹' + due.toLocaleString('en-IN');
 
   const receiptElement = document.getElementById('receiptContent');
-  const originalDisplay = receiptElement.style.display;
 
-  receiptElement.style.display = 'block';
+  // Clone element to prevent CSS cropping / partial capture
+  const clone = receiptElement.cloneNode(true);
+  clone.style.display = 'block';
+  clone.style.position = 'fixed';
+  clone.style.top = '0';
+  clone.style.left = '0';
+  clone.style.width = '480px';
+  clone.style.height = 'auto';
+  clone.style.overflow = 'visible';
+  clone.style.background = '#ffffff';
+  clone.style.padding = '24px';
+  clone.style.zIndex = '-9999';
+  document.body.appendChild(clone);
+
   btnPrintReceipt.disabled = true;
   btnPrintReceipt.textContent = 'Generating PDF...';
 
@@ -178,29 +195,36 @@ btnPrintReceipt.addEventListener('click', () => {
   const opt = {
     margin:       [10, 10, 10, 10],
     filename:     `Fee_Receipt_${cleanName}.pdf`,
-    image:        { type: 'jpeg', quality: 0.98 },
-    html2canvas:  { scale: 2, useCORS: true, logging: false },
+    image:        { type: 'jpeg', quality: 1 },
+    html2canvas:  { 
+      scale: 2, 
+      useCORS: true, 
+      scrollY: 0,
+      scrollX: 0,
+      windowWidth: 1000
+    },
     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
 
   html2pdf()
     .set(opt)
-    .from(receiptElement)
+    .from(clone)
     .save()
     .then(() => {
-      receiptElement.style.display = originalDisplay;
+      document.body.removeChild(clone);
       btnPrintReceipt.disabled = false;
       btnPrintReceipt.textContent = '📄 Download / Print Fee Receipt';
     })
     .catch((err) => {
       console.error('PDF Generation Error:', err);
-      receiptElement.style.display = originalDisplay;
+      if (document.body.contains(clone)) document.body.removeChild(clone);
       btnPrintReceipt.disabled = false;
       btnPrintReceipt.textContent = '📄 Download / Print Fee Receipt';
       alert('PDF generate nahi ho paya. Dobara try karein.');
     });
 });
 
+// --- Helpers ---
 function formatDate(value) {
   if (!value) return '-';
   const d = new Date(value);
