@@ -144,7 +144,6 @@ async function loadStudents() {
   }
 }
 
-// Update Top Stat Cards
 function updateSummaryCards(students) {
   let totalStudents = students.length;
   let totalPaid = 0;
@@ -169,7 +168,6 @@ function updateSummaryCards(students) {
   document.getElementById('statDiscount').textContent = '₹' + totalDiscount.toLocaleString('en-IN');
 }
 
-// Render Table Rows
 function renderTable(students) {
   if (students.length === 0) {
     studentsBody.innerHTML = '<tr><td colspan="8" class="muted">Koi record nahi mila.</td></tr>';
@@ -208,7 +206,6 @@ function renderTable(students) {
       </td>
     `;
 
-    // Save Paid Fee
     tr.querySelector('.updateBtn').addEventListener('click', async () => {
       const val = tr.querySelector('.paidInput').value;
       if (val === '') return;
@@ -216,12 +213,10 @@ function renderTable(students) {
       loadStudents();
     });
 
-    // Open Result Modal
     tr.querySelector('.resultBtn').addEventListener('click', () => {
       openResultEditor(d);
     });
 
-    // Remove Student Record
     tr.querySelector('.removeBtn').addEventListener('click', async () => {
       const ok = confirm(`"${d.name}" ka record delete karein?`);
       if (!ok) return;
@@ -233,7 +228,6 @@ function renderTable(students) {
   });
 }
 
-// Live Search Input Listener
 searchInput.addEventListener('input', (e) => {
   const query = e.target.value.toLowerCase().trim();
   const filtered = allStudentsCache.filter((s) => {
@@ -244,7 +238,6 @@ searchInput.addEventListener('input', (e) => {
   renderTable(filtered);
 });
 
-// --- Result Modal Management ---
 function openResultEditor(student) {
   resultStudentId.value = student.id;
   resultModalStudentName.textContent = `Student: ${student.name}`;

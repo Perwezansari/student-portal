@@ -1,5 +1,5 @@
 // ============================================================
-// Student portal logic (Strict Verification + Responsive Receipt)
+// Student portal logic (Strict Verification + Universal PDF Download)
 // ============================================================
 
 const loginView = document.getElementById('loginView');
@@ -18,10 +18,8 @@ let loggedInStudentData = null;
 auth.onAuthStateChanged(async (user) => {
   loginError.textContent = '';
   if (user) {
-    // Check if this UID really belongs to a student
     await loadStudentData(user.uid);
   } else {
-    // Agar koi logged-in nahi hai, hamesha login screen dikhao
     loggedInStudentData = null;
     dashboardView.style.display = 'none';
     loginView.style.display = 'flex';
@@ -52,7 +50,6 @@ async function loadStudentData(uid) {
   try {
     const doc = await db.collection('students').doc(uid).get();
     
-    // Security check: Agar student collection me ye UID nahi mila (e.g. Admin logged in)
     if (!doc.exists) {
       await auth.signOut();
       loginError.textContent = 'Yeh account Student list mein nahi hai. Kripya Student ID se login karein.';
@@ -61,15 +58,12 @@ async function loadStudentData(uid) {
       return;
     }
 
-    // Valid student record found
     const d = doc.data();
     loggedInStudentData = d;
 
-    // Show dashboard
     loginView.style.display = 'none';
     dashboardView.style.display = 'block';
 
-    // Welcome Greeting
     welcomeStudentName.textContent = d.name || 'Student';
 
     const total = Number(d.totalFee) || 0;
@@ -79,7 +73,6 @@ async function loadStudentData(uid) {
     const due = Math.max(0, netPayable - paid);
     const admissionDate = formatDate(d.admissionDate);
 
-    // Render Ledger
     dashboardContent.innerHTML = `
       <div class="info-row">
         <span>Student Name</span>
@@ -114,7 +107,6 @@ async function loadStudentData(uid) {
       </div>
     `;
 
-    // Render Result Section
     if (d.result && d.result.isPublished) {
       resultSectionContent.innerHTML = `
         <div class="result-card-box">
@@ -166,7 +158,6 @@ btnPrintReceipt.addEventListener('click', () => {
   const paid = Number(d.paidFee) || 0;
   const due = Math.max(0, net - paid);
 
-  // Fill receipt fields
   document.getElementById('rcptName').textContent = d.name || '-';
   document.getElementById('rcptDate').textContent = formatDate(d.admissionDate);
   document.getElementById('rcptCurrentDate').textContent = new Date().toLocaleDateString('en-IN');
@@ -179,7 +170,6 @@ btnPrintReceipt.addEventListener('click', () => {
   const receiptElement = document.getElementById('receiptContent');
   const originalDisplay = receiptElement.style.display;
 
-  // Temporarily show element for snapshot
   receiptElement.style.display = 'block';
   btnPrintReceipt.disabled = true;
   btnPrintReceipt.textContent = 'Generating PDF...';
@@ -187,7 +177,7 @@ btnPrintReceipt.addEventListener('click', () => {
   const cleanName = (d.name || 'Student').replace(/[^a-zA-Z0-9]/g, '_');
   const opt = {
     margin:       [10, 10, 10, 10],
-    filename:     Fee_Receipt_${cleanName}.pdf,
+    filename:     `Fee_Receipt_${cleanName}.pdf`,
     image:        { type: 'jpeg', quality: 0.98 },
     html2canvas:  { scale: 2, useCORS: true, logging: false },
     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
