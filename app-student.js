@@ -1,5 +1,5 @@
 // ============================================================
-// Student portal logic (Strict Verification + Full PDF Download)
+// Student portal logic (Universal Native Receipt & Auth)
 // ============================================================
 
 const loginView = document.getElementById('loginView');
@@ -27,7 +27,7 @@ auth.onAuthStateChanged(async (user) => {
   }
 });
 
-// --- Login Form Handler ---
+// --- Login Handler ---
 loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   loginError.textContent = '';
@@ -47,7 +47,7 @@ loginForm.addEventListener('submit', async (e) => {
 
 logoutBtn.addEventListener('click', () => auth.signOut());
 
-// --- Fetch & Render Student Dashboard ---
+// --- Load Student Data ---
 async function loadStudentData(uid) {
   try {
     const doc = await db.collection('students').doc(uid).get();
@@ -75,7 +75,6 @@ async function loadStudentData(uid) {
     const due = Math.max(0, netPayable - paid);
     const admissionDate = formatDate(d.admissionDate);
 
-    // Ledger Rows
     dashboardContent.innerHTML = `
       <div class="info-row">
         <span>Student Name</span>
@@ -110,7 +109,6 @@ async function loadStudentData(uid) {
       </div>
     `;
 
-    // Exam Result Section
     if (d.result && d.result.isPublished) {
       resultSectionContent.innerHTML = `
         <div class="result-card-box">
@@ -151,7 +149,7 @@ async function loadStudentData(uid) {
   }
 }
 
-// --- Universal 1-Click Complete PDF Downloader ---
+// --- Universal Native Receipt (Works on iOS, Android & Desktop) ---
 btnPrintReceipt.addEventListener('click', () => {
   if (!loggedInStudentData) return;
 
@@ -161,67 +159,247 @@ btnPrintReceipt.addEventListener('click', () => {
   const net = Math.max(0, total - discount);
   const paid = Number(d.paidFee) || 0;
   const due = Math.max(0, net - paid);
+  const admDate = formatDate(d.admissionDate);
+  const todayDate = new Date().toLocaleDateString('en-IN');
 
-  // Fill receipt content
-  document.getElementById('rcptName').textContent = d.name || '-';
-  document.getElementById('rcptDate').textContent = formatDate(d.admissionDate);
-  document.getElementById('rcptCurrentDate').textContent = new Date().toLocaleDateString('en-IN');
-  document.getElementById('rcptTotal').textContent = '₹' + total.toLocaleString('en-IN');
-  document.getElementById('rcptDiscount').textContent = '-₹' + discount.toLocaleString('en-IN');
-  document.getElementById('rcptNet').textContent = '₹' + net.toLocaleString('en-IN');
-  document.getElementById('rcptPaid').textContent = '₹' + paid.toLocaleString('en-IN');
-  document.getElementById('rcptDue').textContent = '₹' + due.toLocaleString('en-IN');
+  const receiptWindow = window.open('', '_blank');
 
-  const receiptElement = document.getElementById('receiptContent');
+  if (!receiptWindow) {
+    alert('Pop-up block ho gaya hai. Kripya browser setting me Pop-ups allow karein.');
+    return;
+  }
 
-  // Clone element to prevent CSS cropping / partial capture
-  const clone = receiptElement.cloneNode(true);
-  clone.style.display = 'block';
-  clone.style.position = 'fixed';
-  clone.style.top = '0';
-  clone.style.left = '0';
-  clone.style.width = '480px';
-  clone.style.height = 'auto';
-  clone.style.overflow = 'visible';
-  clone.style.background = '#ffffff';
-  clone.style.padding = '24px';
-  clone.style.zIndex = '-9999';
-  document.body.appendChild(clone);
+  receiptWindow.document.open();
+  receiptWindow.document.write(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Fee Receipt - ${escapeHtml(d.name || 'Student')}</title>
+      <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+      <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          background-color: #FAF7F2;
+          color: #2D2424;
+          padding: 20px 12px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
+        .action-bar {
+          width: 100%;
+          max-width: 520px;
+          display: flex;
+          gap: 10px;
+          margin-bottom: 16px;
+        }
+        .btn-action {
+          flex: 1;
+          padding: 12px;
+          background: #78202B;
+          color: #fff;
+          border: none;
+          border-radius: 8px;
+          font-size: 15px;
+          font-weight: 700;
+          cursor: pointer;
+          box-shadow: 0 2px 8px rgba(120,32,43,0.25);
+        }
+        .btn-close {
+          padding: 12px 18px;
+          background: #e2dcd5;
+          color: #333;
+          border: none;
+          border-radius: 8px;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+        }
+        .receipt-card {
+          width: 100%;
+          max-width: 520px;
+          background: #ffffff;
+          border: 2px solid #C49A45;
+          border-radius: 12px;
+          padding: 28px 24px;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        }
+        .header {
+          text-align: center;
+          border-bottom: 2px solid #F0EAE1;
+          padding-bottom: 16px;
+          margin-bottom: 18px;
+        }
+        .brand-title {
+          color: #78202B;
+          font-size: 22px;
+          font-weight: 800;
+          letter-spacing: 0.5px;
+        }
+        .brand-sub {
+          font-size: 11px;
+          font-weight: 700;
+          color: #C49A45;
+          letter-spacing: 2px;
+          text-transform: uppercase;
+          margin-top: 4px;
+        }
+        .meta-table, .data-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 16px;
+        }
+        .meta-table td {
+          padding: 6px 0;
+          font-size: 13px;
+        }
+        .meta-label { color: #7A6E65; font-weight: 600; }
+        .meta-val { text-align: right; font-weight: 700; color: #111; }
+        .data-table th {
+          background: #FAF7F2;
+          padding: 8px 10px;
+          text-align: left;
+          font-size: 12px;
+          color: #78202B;
+          border-top: 1px solid #EADBCC;
+          border-bottom: 1px solid #EADBCC;
+        }
+        .data-table th.right, .data-table td.right { text-align: right; }
+        .data-table td {
+          padding: 10px 10px;
+          font-size: 13.5px;
+          border-bottom: 1px dashed #F0EAE1;
+        }
+        .due-row {
+          background: #FFF9F9;
+          font-weight: 800;
+        }
+        .due-row td {
+          color: ${due > 0 ? '#B22222' : '#2E7D32'};
+          border-top: 1.5px solid #EADBCC;
+          border-bottom: 1.5px solid #EADBCC;
+          font-size: 15px;
+        }
+        .footer {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+          margin-top: 24px;
+          padding-top: 12px;
+        }
+        .status-badge {
+          display: inline-block;
+          font-size: 11px;
+          font-weight: 700;
+          padding: 4px 8px;
+          border-radius: 4px;
+          background: #E8F5E9;
+          color: #2E7D32;
+        }
+        .signature-line {
+          text-align: center;
+          border-top: 1px solid #7A6E65;
+          padding-top: 4px;
+          width: 140px;
+          font-size: 11px;
+          font-weight: 600;
+          color: #7A6E65;
+        }
+        @media print {
+          body { background: #fff; padding: 0; }
+          .action-bar { display: none !important; }
+          .receipt-card {
+            border: 1.5px solid #78202B;
+            box-shadow: none;
+            max-width: 100%;
+            padding: 20px;
+          }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="action-bar">
+        <button class="btn-action" onclick="window.print()">📥 Save as PDF / Print</button>
+        <button class="btn-close" onclick="window.close()">Close</button>
+      </div>
 
-  btnPrintReceipt.disabled = true;
-  btnPrintReceipt.textContent = 'Generating PDF...';
+      <div class="receipt-card">
+        <div class="header">
+          <div class="brand-title">Shama Henna Classes</div>
+          <div class="brand-sub">Official Fee Receipt</div>
+        </div>
 
-  const cleanName = (d.name || 'Student').replace(/[^a-zA-Z0-9]/g, '_');
-  const opt = {
-    margin:       [10, 10, 10, 10],
-    filename:     `Fee_Receipt_${cleanName}.pdf`,
-    image:        { type: 'jpeg', quality: 1 },
-    html2canvas:  { 
-      scale: 2, 
-      useCORS: true, 
-      scrollY: 0,
-      scrollX: 0,
-      windowWidth: 1000
-    },
-    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  };
+        <table class="meta-table">
+          <tr>
+            <td class="meta-label">Student Name:</td>
+            <td class="meta-val">${escapeHtml(d.name || '-')}</td>
+          </tr>
+          <tr>
+            <td class="meta-label">Admission Date:</td>
+            <td class="meta-val">${admDate}</td>
+          </tr>
+          <tr>
+            <td class="meta-label">Receipt Date:</td>
+            <td class="meta-val">${todayDate}</td>
+          </tr>
+        </table>
 
-  html2pdf()
-    .set(opt)
-    .from(clone)
-    .save()
-    .then(() => {
-      document.body.removeChild(clone);
-      btnPrintReceipt.disabled = false;
-      btnPrintReceipt.textContent = '📄 Download / Print Fee Receipt';
-    })
-    .catch((err) => {
-      console.error('PDF Generation Error:', err);
-      if (document.body.contains(clone)) document.body.removeChild(clone);
-      btnPrintReceipt.disabled = false;
-      btnPrintReceipt.textContent = '📄 Download / Print Fee Receipt';
-      alert('PDF generate nahi ho paya. Dobara try karein.');
-    });
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Description</th>
+              <th class="right">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Course Total Fee</td>
+              <td class="right">₹${total.toLocaleString('en-IN')}</td>
+            </tr>
+            <tr>
+              <td>Special Discount / Concession</td>
+              <td class="right" style="color:#C49A45;">-₹${discount.toLocaleString('en-IN')}</td>
+            </tr>
+            <tr>
+              <td><strong>Net Payable Fee</strong></td>
+              <td class="right"><strong>₹${net.toLocaleString('en-IN')}</strong></td>
+            </tr>
+            <tr>
+              <td style="color:#2E7D32;">Total Amount Paid</td>
+              <td class="right" style="color:#2E7D32; font-weight:700;">₹${paid.toLocaleString('en-IN')}</td>
+            </tr>
+            <tr class="due-row">
+              <td>Remaining Balance (Due)</td>
+              <td class="right">₹${due.toLocaleString('en-IN')}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="footer">
+          <div>
+            <span class="status-badge">Status: ${due > 0 ? 'PARTIAL / DUE' : 'FULLY PAID'}</span>
+          </div>
+          <div class="signature-line">
+            Authorized Signature
+          </div>
+        </div>
+      </div>
+
+      <script>
+        // Auto trigger print dialog smoothly on desktop
+        window.addEventListener('load', () => {
+          if (!/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+            setTimeout(() => { window.print(); }, 400);
+          }
+        });
+      <\/script>
+    </body>
+    </html>
+  `);
+  receiptWindow.document.close();
 });
 
 // --- Helpers ---
