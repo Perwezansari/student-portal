@@ -1,5 +1,5 @@
 // ============================================================
-// Student Portal Logic (Fast Login + Multi-Device Clean Receipt)
+// Student Portal Logic (Fast Login + Universal Receipt Download)
 // ============================================================
 
 const loginView = document.getElementById('loginView');
@@ -14,16 +14,15 @@ const btnPrintReceipt = document.getElementById('btnPrintReceipt');
 
 let loggedInStudentData = null;
 
-// Background Persistence Initialization
+// Background Persistence
 auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(() => {});
 
-// Helper function to reset login button & form
-function resetLoginState() {
+// Helper function to reset form & enable button (Button text remain untouched)
+function resetStudentLoginForm() {
   loginForm.reset();
   const btn = loginForm.querySelector('button');
   if (btn) {
     btn.disabled = false;
-    btn.textContent = 'Sign In';
   }
 }
 
@@ -36,7 +35,7 @@ auth.onAuthStateChanged(async (user) => {
     loggedInStudentData = null;
     dashboardView.style.display = 'none';
     loginView.style.display = 'flex';
-    resetLoginState();
+    resetStudentLoginForm();
   }
 });
 
@@ -49,18 +48,20 @@ loginForm.addEventListener('submit', async (e) => {
   const btn = loginForm.querySelector('button');
 
   btn.disabled = true;
-  btn.textContent = 'Verifying...';
 
   try {
     await auth.signInWithEmailAndPassword(email, password);
   } catch (err) {
-    btn.disabled = false;
-    btn.textContent = 'Sign In';
     loginError.textContent = friendlyError(err.code) || 'Login nahi ho paya.';
+  } finally {
+    btn.disabled = false;
   }
 });
 
-logoutBtn.addEventListener('click', () => auth.signOut());
+logoutBtn.addEventListener('click', async () => {
+  resetStudentLoginForm();
+  await auth.signOut();
+});
 
 // --- Load Student Dashboard ---
 async function loadStudentData(uid) {
@@ -72,7 +73,7 @@ async function loadStudentData(uid) {
       loginError.textContent = 'Yeh account Student list mein nahi hai. Kripya Student ID se login karein.';
       dashboardView.style.display = 'none';
       loginView.style.display = 'flex';
-      resetLoginState();
+      resetStudentLoginForm();
       return;
     }
 
@@ -91,7 +92,7 @@ async function loadStudentData(uid) {
     const due = Math.max(0, netPayable - paid);
     const admissionDate = formatDate(d.admissionDate);
 
-    // Render Ledger Rows
+    // Ledger Rows
     dashboardContent.innerHTML = `
       <div class="info-row">
         <span>Student Name</span>
@@ -126,7 +127,7 @@ async function loadStudentData(uid) {
       </div>
     `;
 
-    // Render Result Section
+    // Exam Result Section
     if (d.result && d.result.isPublished) {
       resultSectionContent.innerHTML = `
         <div class="result-card-box">
@@ -162,12 +163,12 @@ async function loadStudentData(uid) {
     await auth.signOut();
     dashboardView.style.display = 'none';
     loginView.style.display = 'flex';
-    resetLoginState();
+    resetStudentLoginForm();
     loginError.textContent = 'Data verify nahi ho paya. Dobara login karein.';
   }
 }
 
-// --- Universal Direct Receipt ---
+// --- Universal Receipt Modal / Print Window ---
 btnPrintReceipt.addEventListener('click', () => {
   if (!loggedInStudentData) return;
 

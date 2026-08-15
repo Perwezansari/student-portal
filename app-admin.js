@@ -1,5 +1,5 @@
 // ============================================================
-// Admin Portal Logic (Instant Login + Fast Ledger CRUD)
+// Admin Portal Logic (Instant Login + Ledger CRUD + Results)
 // ============================================================
 
 const loginView = document.getElementById('loginView');
@@ -26,16 +26,15 @@ const btnRemoveResult = document.getElementById('btnRemoveResult');
 
 let allStudentsCache = [];
 
-// Background Persistence Initialization
+// Background Persistence
 auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(() => {});
 
-// Helper function to reset login button & form
-function resetAdminLoginState() {
+// Helper function to reset form & enable button (Button text remain untouched)
+function resetAdminLoginForm() {
   loginForm.reset();
   const btn = loginForm.querySelector('button');
   if (btn) {
     btn.disabled = false;
-    btn.textContent = 'Sign In';
   }
 }
 
@@ -55,19 +54,19 @@ auth.onAuthStateChanged(async (user) => {
         alert('Access Denied: Student account se admin dashboard open nahi kiya ja sakta!');
         loginView.style.display = 'flex';
         dashboardView.style.display = 'none';
-        resetAdminLoginState();
+        resetAdminLoginForm();
       }
     } catch (err) {
       await auth.signOut();
       loginError.textContent = 'Verification error. Dobara try karein.';
       loginView.style.display = 'flex';
       dashboardView.style.display = 'none';
-      resetAdminLoginState();
+      resetAdminLoginForm();
     }
   } else {
     loginView.style.display = 'flex';
     dashboardView.style.display = 'none';
-    resetAdminLoginState();
+    resetAdminLoginForm();
   }
 });
 
@@ -80,18 +79,20 @@ loginForm.addEventListener('submit', async (e) => {
   const btn = loginForm.querySelector('button');
 
   btn.disabled = true;
-  btn.textContent = 'Verifying...';
 
   try {
     await auth.signInWithEmailAndPassword(email, password);
   } catch (err) {
-    btn.disabled = false;
-    btn.textContent = 'Sign In';
     loginError.textContent = friendlyError(err.code) || 'Login nahi ho paya.';
+  } finally {
+    btn.disabled = false;
   }
 });
 
-logoutBtn.addEventListener('click', () => auth.signOut());
+logoutBtn.addEventListener('click', async () => {
+  resetAdminLoginForm();
+  await auth.signOut();
+});
 
 // --- Add Student Logic ---
 addForm.addEventListener('submit', async (e) => {
