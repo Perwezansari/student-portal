@@ -1,5 +1,5 @@
 // ============================================================
-// Student portal logic (Welcome + Discount + Receipt + Results)
+// Student portal logic (Strict Verification + Responsive Receipt)
 // ============================================================
 
 const loginView = document.getElementById('loginView');
@@ -14,15 +14,17 @@ const btnPrintReceipt = document.getElementById('btnPrintReceipt');
 
 let loggedInStudentData = null;
 
+// --- Auth State Verification ---
 auth.onAuthStateChanged(async (user) => {
   loginError.textContent = '';
   if (user) {
-    loginView.style.display = 'none';
-    dashboardView.style.display = 'block';
+    // Check if this UID really belongs to a student
     await loadStudentData(user.uid);
   } else {
-    loginView.style.display = 'flex';
+    // Agar koi logged-in nahi hai, hamesha login screen dikhao
+    loggedInStudentData = null;
     dashboardView.style.display = 'none';
+    loginView.style.display = 'flex';
     loginForm.reset();
   }
 });
@@ -37,7 +39,7 @@ loginForm.addEventListener('submit', async (e) => {
   try {
     await auth.signInWithEmailAndPassword(email, password);
   } catch (err) {
-    loginError.textContent = friendlyError(err.code);
+    loginError.textContent = friendlyError(err.code) || 'Login nahi ho paya.';
   } finally {
     btn.disabled = false;
   }
@@ -46,22 +48,28 @@ loginForm.addEventListener('submit', async (e) => {
 logoutBtn.addEventListener('click', () => auth.signOut());
 
 async function loadStudentData(uid) {
-  dashboardContent.innerHTML = '<p class="muted">Loading records...</p>';
   try {
     const doc = await db.collection('students').doc(uid).get();
+    
+    // Security check: Agar student collection me ye UID nahi mila (e.g. Admin logged in)
     if (!doc.exists) {
-      dashboardContent.innerHTML =
-        '<p class="muted">Aapka record abhi nahi mila. Apne admin/teacher se sampark karein.</p>';
+      await auth.signOut();
+      loginError.textContent = 'Yeh account Student list mein nahi hai. Kripya Student ID se login karein.';
+      dashboardView.style.display = 'none';
+      loginView.style.display = 'flex';
       return;
     }
 
+    // Valid student record found
     const d = doc.data();
     loggedInStudentData = d;
 
-    // Welcome Greeting Name
-    if (d.name) {
-      welcomeStudentName.textContent = d.name;
-    }
+    // Show dashboard
+    loginView.style.display = 'none';
+    dashboardView.style.display = 'block';
+
+    // Welcome Greeting
+    welcomeStudentName.textContent = d.name || 'Student';
 
     const total = Number(d.totalFee) || 0;
     const discount = Number(d.discount) || 0;
@@ -105,7 +113,7 @@ async function loadStudentData(uid) {
       </div>
     `;
 
-    // Render Result Section (Marks, Grade, Pass/Fail)
+    // Render Result Section
     if (d.result && d.result.isPublished) {
       resultSectionContent.innerHTML = `
         <div class="result-card-box">
@@ -139,12 +147,14 @@ async function loadStudentData(uid) {
     }
 
   } catch (err) {
-    dashboardContent.innerHTML =
-      '<p class="muted">Data load nahi ho paya. Page refresh karke dobara try karein.</p>';
+    await auth.signOut();
+    dashboardView.style.display = 'none';
+    loginView.style.display = 'flex';
+    loginError.textContent = 'Data verify nahi ho paya. Dobara login karein.';
   }
 }
 
-// --- Printable Receipt Trigger ---
+// --- Printable Receipt Trigger (Clean & Responsive) ---
 btnPrintReceipt.addEventListener('click', () => {
   if (!loggedInStudentData) return;
 
@@ -165,19 +175,48 @@ btnPrintReceipt.addEventListener('click', () => {
   document.getElementById('rcptDue').textContent = '₹' + due.toLocaleString('en-IN');
 
   const receiptHtml = document.getElementById('receiptContent').outerHTML;
-  const printWindow = window.open('', '', 'width=750,height=750');
+  const printWindow = window.open('', '', 'width=800,height=800');
+  
   printWindow.document.write(`
+    <!DOCTYPE html>
     <html>
       <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Fee Receipt - ${d.name}</title>
+        <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
         <style>
-          body { font-family: sans-serif; padding: 20px; display: flex; justify-content: center; }
+          * { box-sizing: border-box; }
+          body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: #FAF7F2; 
+            margin: 0; 
+            padding: 20px 12px; 
+            display: flex; 
+            justify-content: center; 
+            align-items: flex-start;
+          }
+          #receiptContent {
+            width: 100% !important;
+            max-width: 480px !important;
+            background: #ffffff !important;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.06) !important;
+            padding: 24px 20px !important;
+            margin: 0 auto !important;
+          }
+          @media print {
+            body { background: #fff; padding: 0; }
+            #receiptContent { box-shadow: none !important; border: 1.5px solid #C59B4E !important; }
+          }
         </style>
       </head>
       <body>
         ${receiptHtml}
         <script>
-          window.onload = function() { window.print(); window.close(); }
+          window.onload = function() {
+            setTimeout(() => {
+              window.print();
+            }, 300);
+          };
         <\/script>
       </body>
     </html>
