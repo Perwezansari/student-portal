@@ -26,8 +26,18 @@ const btnRemoveResult = document.getElementById('btnRemoveResult');
 
 let allStudentsCache = [];
 
-// Background Persistence Initialization (No latency on submit)
+// Background Persistence Initialization
 auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(() => {});
+
+// Helper function to reset login button & form
+function resetAdminLoginState() {
+  loginForm.reset();
+  const btn = loginForm.querySelector('button');
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = 'Sign In';
+  }
+}
 
 // --- Auth State Verification ---
 auth.onAuthStateChanged(async (user) => {
@@ -45,28 +55,29 @@ auth.onAuthStateChanged(async (user) => {
         alert('Access Denied: Student account se admin dashboard open nahi kiya ja sakta!');
         loginView.style.display = 'flex';
         dashboardView.style.display = 'none';
+        resetAdminLoginState();
       }
     } catch (err) {
       await auth.signOut();
       loginError.textContent = 'Verification error. Dobara try karein.';
       loginView.style.display = 'flex';
       dashboardView.style.display = 'none';
+      resetAdminLoginState();
     }
   } else {
     loginView.style.display = 'flex';
     dashboardView.style.display = 'none';
-    loginForm.reset();
+    resetAdminLoginState();
   }
 });
 
-// --- Instant Fast Login Handler ---
+// --- Instant Login Handler ---
 loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   loginError.textContent = '';
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
   const btn = loginForm.querySelector('button');
-  const originalText = btn.textContent;
 
   btn.disabled = true;
   btn.textContent = 'Verifying...';
@@ -75,7 +86,7 @@ loginForm.addEventListener('submit', async (e) => {
     await auth.signInWithEmailAndPassword(email, password);
   } catch (err) {
     btn.disabled = false;
-    btn.textContent = originalText;
+    btn.textContent = 'Sign In';
     loginError.textContent = friendlyError(err.code) || 'Login nahi ho paya.';
   }
 });

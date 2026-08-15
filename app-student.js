@@ -14,8 +14,18 @@ const btnPrintReceipt = document.getElementById('btnPrintReceipt');
 
 let loggedInStudentData = null;
 
-// Background Persistence Initialization (Login delay khatam karne ke liye)
+// Background Persistence Initialization
 auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(() => {});
+
+// Helper function to reset login button & form
+function resetLoginState() {
+  loginForm.reset();
+  const btn = loginForm.querySelector('button');
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = 'Sign In';
+  }
+}
 
 // --- Auth State Verification ---
 auth.onAuthStateChanged(async (user) => {
@@ -26,18 +36,17 @@ auth.onAuthStateChanged(async (user) => {
     loggedInStudentData = null;
     dashboardView.style.display = 'none';
     loginView.style.display = 'flex';
-    loginForm.reset();
+    resetLoginState();
   }
 });
 
-// --- Instant Fast Login Handler ---
+// --- Instant Login Handler ---
 loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   loginError.textContent = '';
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
   const btn = loginForm.querySelector('button');
-  const originalText = btn.textContent;
 
   btn.disabled = true;
   btn.textContent = 'Verifying...';
@@ -46,7 +55,7 @@ loginForm.addEventListener('submit', async (e) => {
     await auth.signInWithEmailAndPassword(email, password);
   } catch (err) {
     btn.disabled = false;
-    btn.textContent = originalText;
+    btn.textContent = 'Sign In';
     loginError.textContent = friendlyError(err.code) || 'Login nahi ho paya.';
   }
 });
@@ -63,6 +72,7 @@ async function loadStudentData(uid) {
       loginError.textContent = 'Yeh account Student list mein nahi hai. Kripya Student ID se login karein.';
       dashboardView.style.display = 'none';
       loginView.style.display = 'flex';
+      resetLoginState();
       return;
     }
 
@@ -152,11 +162,12 @@ async function loadStudentData(uid) {
     await auth.signOut();
     dashboardView.style.display = 'none';
     loginView.style.display = 'flex';
+    resetLoginState();
     loginError.textContent = 'Data verify nahi ho paya. Dobara login karein.';
   }
 }
 
-// --- Universal Direct Receipt (Zero Library Crash / No Blank Apple Page) ---
+// --- Universal Direct Receipt ---
 btnPrintReceipt.addEventListener('click', () => {
   if (!loggedInStudentData) return;
 
