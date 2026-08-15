@@ -1,5 +1,5 @@
 // ============================================================
-// Admin Portal Logic (Instant Login + Ledger CRUD + Results)
+// Admin Portal Logic (Instant Login + Verifying State + Direct Reset)
 // ============================================================
 
 const loginView = document.getElementById('loginView');
@@ -29,12 +29,13 @@ let allStudentsCache = [];
 // Background Persistence
 auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(() => {});
 
-// Helper function to reset form & enable button (Button text remain untouched)
+// Helper function: Button ko har haal me "Login to Dashboard" par reset karega
 function resetAdminLoginForm() {
   loginForm.reset();
   const btn = loginForm.querySelector('button');
   if (btn) {
     btn.disabled = false;
+    btn.textContent = 'Login to Dashboard';
   }
 }
 
@@ -70,7 +71,7 @@ auth.onAuthStateChanged(async (user) => {
   }
 });
 
-// --- Instant Login Handler ---
+// --- Login Handler ---
 loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   loginError.textContent = '';
@@ -79,13 +80,16 @@ loginForm.addEventListener('submit', async (e) => {
   const btn = loginForm.querySelector('button');
 
   btn.disabled = true;
+  btn.textContent = 'Verifying...';
 
   try {
     await auth.signInWithEmailAndPassword(email, password);
   } catch (err) {
     loginError.textContent = friendlyError(err.code) || 'Login nahi ho paya.';
   } finally {
+    // Ye block HAR HAAL ME chalega taaki logout ke baad ya error aane par "Login to Dashboard" wapas aa jaye
     btn.disabled = false;
+    btn.textContent = 'Login to Dashboard';
   }
 });
 

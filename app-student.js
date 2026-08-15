@@ -1,5 +1,5 @@
 // ============================================================
-// Student Portal Logic (Fast Login + Universal Receipt Download)
+// Student Portal Logic (Fast Login + Verifying State + Direct Reset)
 // ============================================================
 
 const loginView = document.getElementById('loginView');
@@ -17,12 +17,13 @@ let loggedInStudentData = null;
 // Background Persistence
 auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(() => {});
 
-// Helper function to reset form & enable button (Button text remain untouched)
+// Helper function: Button ko har haal me "Login to Dashboard" par reset karega
 function resetStudentLoginForm() {
   loginForm.reset();
   const btn = loginForm.querySelector('button');
   if (btn) {
     btn.disabled = false;
+    btn.textContent = 'Login to Dashboard';
   }
 }
 
@@ -39,7 +40,7 @@ auth.onAuthStateChanged(async (user) => {
   }
 });
 
-// --- Instant Login Handler ---
+// --- Login Handler ---
 loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   loginError.textContent = '';
@@ -48,13 +49,16 @@ loginForm.addEventListener('submit', async (e) => {
   const btn = loginForm.querySelector('button');
 
   btn.disabled = true;
+  btn.textContent = 'Verifying...';
 
   try {
     await auth.signInWithEmailAndPassword(email, password);
   } catch (err) {
     loginError.textContent = friendlyError(err.code) || 'Login nahi ho paya.';
   } finally {
+    // Ye block HAR HAAL ME chalega taaki logout ke baad ya error aane par "Login to Dashboard" wapas aa jaye
     btn.disabled = false;
+    btn.textContent = 'Login to Dashboard';
   }
 });
 
@@ -168,7 +172,7 @@ async function loadStudentData(uid) {
   }
 }
 
-// --- Universal Receipt Modal / Print Window ---
+// --- Universal Receipt Print / Download ---
 btnPrintReceipt.addEventListener('click', () => {
   if (!loggedInStudentData) return;
 
