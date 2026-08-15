@@ -1,154 +1,432 @@
 /* ============================================================
-   Shama Henna Classes — Luxury Brand Design Tokens
-   Colors: Rose Gold, Henna Emerald, Soft Ivory Paper
+   Shama Henna Classes — Luxury Ivory & Maroon Design System
+   Matches clean warm-cream background from reference
    ============================================================ */
 
 :root {
-  --primary: #9C3349;          /* Henna Rose Wine */
-  --primary-hover: #7E2638;
-  --secondary: #1F4335;        /* Deep Mehndi Green */
-  --gold: #C59B4E;             /* Rose Gold Accent */
-  --gold-light: #F9F4EB;
-  --bg-gradient: linear-gradient(135deg, #FAF7F2 0%, #F5ECE1 100%);
-  --card-bg: rgba(255, 255, 255, 0.95);
-  --card-border: #EFE4D6;
-  --ink: #2C2623;
-  --muted: #796E65;
-  --due: #B83A2E;
-  --due-bg: #FDF1EF;
-  --paid: #1E6B4B;
-  --paid-bg: #EDF7F2;
-  --radius: 20px;
-  --shadow: 0 15px 35px rgba(156, 51, 73, 0.08), 0 5px 15px rgba(0,0,0,0.03);
+  --primary: #78202B;
+  --primary-dark: #450B12;
+  --primary-light: #942937;
+  --gold: #C49A45;
+  --gold-light: #F3D99F;
+  --gold-subtle: rgba(196, 154, 69, 0.18);
+  
+  --bg-page: #F5EFEB;
+  --bg-surface: #FFFFFF;
+  --bg-surface-elevated: #FCFAF7;
+  --card-border: #EFE6DD;
+  
+  --text-main: #241A1B;
+  --text-muted: #7A6E6D;
+  --text-subtle: #9E9493;
+  
+  --success: #1E7E34;
+  --success-bg: #E8F5E9;
+  --danger: #B22222;
+  --danger-bg: #FFEBEE;
+  
+  --shadow-sm: 0 2px 8px rgba(36, 26, 27, 0.04);
+  --shadow-md: 0 10px 30px rgba(120, 32, 43, 0.07);
+  --shadow-lg: 0 20px 50px rgba(120, 32, 43, 0.12);
+  
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 26px;
+  --transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-* { box-sizing: border-box; }
-
-html, body {
+* {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
-  min-height: 100vh;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
-  font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
-  background: var(--bg-gradient);
-  color: var(--ink);
-  -webkit-font-smoothing: antialiased;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background-color: var(--bg-page);
+  color: var(--text-main);
+  line-height: 1.5;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
-h1, h2, h3, h4 {
-  margin: 0 0 6px;
-  font-weight: 600;
-  color: var(--ink);
+/* ============================================================
+   1. CLEAN ROYAL CREAM LOGIN SCREEN
+   ============================================================ */
+
+.auth-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 40px 16px 30px;
+  position: relative;
+  background: radial-gradient(circle at 50% 30%, #FFFFFF 0%, #F5EDE4 70%, #EBE1D5 100%);
+  overflow-x: hidden;
 }
 
-p { margin: 0 0 10px; line-height: 1.5; }
-.muted { color: var(--muted); font-size: 13.5px; }
-
-/* ---------- Brand & Header Styling ---------- */
 .top-nav-link {
   position: absolute;
-  top: 20px;
-  right: 24px;
+  top: 24px;
+  right: 20px;
+  z-index: 10;
 }
 
 .nav-switch-btn {
-  text-decoration: none;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--primary);
-  background: #fff;
-  padding: 8px 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #FFFFFF;
+  padding: 8px 18px;
   border-radius: 30px;
-  border: 1px solid var(--card-border);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-  transition: all 0.2s ease;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--primary);
+  text-decoration: none;
+  border: 1px solid rgba(196, 154, 69, 0.35);
+  box-shadow: 0 4px 14px rgba(120, 32, 43, 0.08);
+  transition: var(--transition);
 }
 
 .nav-switch-btn:hover {
-  background: var(--gold-light);
-  border-color: var(--gold);
-  transform: translateY(-1px);
+  background: #FAF7F2;
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 18px rgba(196, 154, 69, 0.25);
+}
+
+/* White Solid Floating Card */
+.auth-card {
+  position: relative;
+  z-index: 5;
+  width: 100%;
+  max-width: 375px;
+  background: #FFFFFF;
+  border-radius: var(--radius-lg);
+  padding: 36px 28px 24px;
+  border: 1px solid var(--card-border);
+  box-shadow: 
+    0 20px 45px rgba(120, 32, 43, 0.08),
+    0 1px 3px rgba(0, 0, 0, 0.02);
+  animation: cardEntrance 0.4s ease-out;
+}
+
+@keyframes cardEntrance {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .brand-header {
   text-align: center;
-  margin-bottom: 16px;
 }
 
 .brand-logo {
-  width: 90px;
-  height: 90px;
+  width: 82px;
+  height: 82px;
   border-radius: 50%;
   object-fit: cover;
-  box-shadow: 0 6px 20px rgba(197, 155, 78, 0.25);
   border: 2px solid var(--gold);
-  margin-bottom: 8px;
-  animation: pulseLogo 3s infinite ease-in-out;
+  box-shadow: 0 4px 16px rgba(196, 154, 69, 0.25);
+  background: #fff;
+  padding: 2px;
+  margin-bottom: 10px;
 }
 
 .brand-title {
   font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 36px;
+  font-size: 34px;
   font-weight: 700;
   color: var(--primary);
   line-height: 1;
-  letter-spacing: 0.02em;
+  text-align: center;
+  letter-spacing: 0.5px;
 }
 
 .brand-subtitle {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.22em;
-  color: var(--gold);
   display: block;
-  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--gold);
+  letter-spacing: 3.5px;
+  text-transform: uppercase;
+  text-align: center;
+  margin-top: 5px;
 }
 
 .divider {
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--card-border), transparent);
-  margin: 18px 0;
-}
-
-/* ---------- Auth Screen ---------- */
-.auth-wrap {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  position: relative;
-}
-
-.auth-card {
-  width: 100%;
-  max-width: 400px;
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 36px 30px 30px;
-  backdrop-filter: blur(8px);
-  animation: rise 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  display: none; /* Clean spacing without divider */
 }
 
 .auth-card h2 {
-  font-size: 20px;
+  font-size: 19px;
+  font-weight: 800;
   color: var(--primary);
-  font-weight: 700;
+  text-align: left;
+  margin-top: 24px;
+  margin-bottom: 4px;
 }
 
-/* ---------- Form Controls ---------- */
-label {
+.auth-card p.muted {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: left;
+  margin-bottom: 22px;
+  line-height: 1.4;
+}
+
+.auth-card label {
   display: block;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  color: #554446;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin: 14px 0 6px;
+  letter-spacing: 0.8px;
+  margin-bottom: 6px;
+  text-align: left;
+}
+
+.auth-card input {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 14px;
+  background: #FCFAF7;
+  border: 1.5px solid var(--card-border);
+  border-radius: var(--radius-sm);
+  color: #1A0D0E;
+  outline: none;
+  transition: var(--transition);
+  margin-bottom: 16px;
+}
+
+.auth-card input:focus {
+  background: #FFFFFF;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 4px var(--gold-subtle);
+}
+
+/* Velvet Maroon Action Button */
+.btn.primary.full {
+  width: 100%;
+  padding: 13.5px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--primary) 0%, #58161f 100%);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(120, 32, 43, 0.3);
+  transition: var(--transition);
+  margin-top: 4px;
+}
+
+.btn.primary.full:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 0 8px 24px rgba(120, 32, 43, 0.4);
+}
+
+.btn.primary.full:active {
+  transform: translateY(0);
+}
+
+/* ============================================================
+   2. TOPBAR & DASHBOARD NAVIGATION
+   ============================================================ */
+
+.topbar {
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--card-border);
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topbar-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid var(--gold);
+  object-fit: cover;
+}
+
+.topbar-brand h2 {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--primary);
+  line-height: 1.2;
+}
+
+.muted-tag {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ============================================================
+   3. DASHBOARD MAIN CONTAINER & CARDS
+   ============================================================ */
+
+.container {
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 24px 16px;
+  flex: 1;
+}
+
+.welcome-banner {
+  background: linear-gradient(135deg, #FFFDF9 0%, #F5EDE0 100%);
+  border: 1px solid rgba(196, 154, 69, 0.35);
+  border-radius: var(--radius-md);
+  padding: 22px 24px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.welcome-banner h2 {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+
+.card {
+  background: var(--bg-surface);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--shadow-md);
+  padding: 26px;
+  margin-bottom: 24px;
+  transition: var(--transition);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-lg);
+}
+
+.card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--card-border);
+  padding-bottom: 14px;
+}
+
+.card-head h2 {
+  font-size: 17.5px;
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  background: var(--gold-subtle);
+  color: #8C681E;
+  border: 1px solid rgba(196, 154, 69, 0.4);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ============================================================
+   4. SUMMARY STAT CARDS (Admin)
+   ============================================================ */
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--primary);
+}
+
+.stat-card.stat-paid::before { background: var(--success); }
+.stat-card.stat-due::before { background: var(--danger); }
+.stat-card.stat-gold::before { background: var(--gold); }
+
+.stat-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.stat-value {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--primary);
+  margin-top: 6px;
+}
+
+/* ============================================================
+   5. FORMS & INPUTS (Registration & Modal)
+   ============================================================ */
+
+.grid-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.grid-form div {
+  display: flex;
+  flex-direction: column;
+}
+
+label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #554446;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 6px;
 }
 
 input[type="text"],
@@ -158,291 +436,192 @@ input[type="number"],
 input[type="date"],
 select {
   width: 100%;
-  padding: 12px 14px;
-  border: 1.5px solid var(--card-border);
-  border-radius: 12px;
-  font-size: 14.5px;
+  padding: 11px 13px;
+  font-size: 13.5px;
   font-family: inherit;
-  background: #FCFAF7;
-  color: var(--ink);
-  transition: all 0.2s ease;
+  background: var(--bg-surface-elevated);
+  border: 1.5px solid var(--card-border);
+  border-radius: var(--radius-sm);
+  color: var(--text-main);
+  transition: var(--transition);
+  outline: none;
 }
 
-input:focus, select:focus {
-  outline: none;
+input:focus,
+select:focus {
   border-color: var(--gold);
   background: #fff;
-  box-shadow: 0 0 0 4px rgba(197, 155, 78, 0.12);
+  box-shadow: 0 0 0 3.5px var(--gold-subtle);
 }
 
-/* ---------- Buttons ---------- */
+.grid-form button[type="submit"] {
+  grid-column: 1 / -1;
+  margin-top: 6px;
+  padding: 13px;
+}
+
+/* ============================================================
+   6. BUTTONS
+   ============================================================ */
+
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
+  padding: 10px 18px;
+  font-size: 13.5px;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
   border: none;
-  border-radius: 12px;
-  padding: 12px 20px;
-  font-size: 14px;
-  font-weight: 600;
-  font-family: inherit;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--transition);
+  text-decoration: none;
 }
 
 .btn.primary {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
   color: #fff;
-  box-shadow: 0 4px 14px rgba(156, 51, 73, 0.25);
+  box-shadow: 0 4px 14px rgba(120, 32, 43, 0.25);
 }
 
 .btn.primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(156, 51, 73, 0.35);
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 20px rgba(120, 32, 43, 0.35);
 }
 
 .btn.secondary-btn {
-  background: #1F4335;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
   color: #fff;
+  padding: 10px 16px;
 }
 
 .btn.secondary-btn:hover {
-  background: #163227;
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 14px rgba(120, 32, 43, 0.3);
 }
 
 .btn.ghost {
-  background: #fff;
+  background: transparent;
+  color: var(--text-muted);
   border: 1.5px solid var(--card-border);
-  color: var(--ink);
 }
 
 .btn.ghost:hover {
-  border-color: var(--gold);
-  color: var(--primary);
+  background: var(--card-border);
+  color: var(--text-main);
 }
 
 .btn.danger {
-  background: var(--due-bg);
-  color: var(--due);
-  border: 1px solid var(--due);
+  background: var(--danger-bg);
+  color: var(--danger);
+  border: 1px solid rgba(178, 34, 34, 0.2);
 }
 
 .btn.danger:hover {
-  background: var(--due);
+  background: var(--danger);
   color: #fff;
 }
 
-.btn.full { width: 100%; margin-top: 20px; }
-.btn.small { padding: 6px 12px; font-size: 12px; }
-
-/* ---------- Alerts & Status ---------- */
-.error { color: var(--due); font-size: 13.5px; margin-top: 12px; font-weight: 500; }
-.status { font-size: 13.5px; margin-top: 12px; font-weight: 500; }
-.status.success { color: var(--paid); }
-.status.danger { color: var(--due); }
-
-/* ---------- Top Bar & Shell ---------- */
-.topbar {
-  background: var(--card-bg);
-  border-bottom: 1px solid var(--card-border);
-  padding: 16px 32px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+.btn.small {
+  padding: 6px 12px;
+  font-size: 12px;
+  border-radius: 6px;
 }
 
-.topbar-brand {
-  display: flex;
-  align-items: center;
-  gap: 14px;
+.btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
 }
 
-.topbar-logo {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: 1.5px solid var(--gold);
-}
+/* ============================================================
+   7. TABLE DIRECTORY & SEARCH
+   ============================================================ */
 
-.topbar h2 {
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 22px;
-  color: var(--primary);
-  margin: 0;
-}
-
-.muted-tag {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--gold);
-}
-
-.topbar-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.container {
-  max-width: 980px;
-  margin: 0 auto;
-  padding: 32px 20px 60px;
-}
-
-.card {
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 28px;
-  margin-bottom: 24px;
-  animation: rise 0.35s ease;
-}
-
-.card-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  border-bottom: 1px solid var(--card-border);
-  padding-bottom: 14px;
-}
-
-.card-head h2 {
-  font-size: 18px;
-  color: var(--primary);
-}
-
-.badge {
-  background: var(--gold-light);
-  color: var(--gold);
-  font-size: 11px;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 20px;
-  border: 1px solid rgba(197, 155, 78, 0.3);
-}
-
-/* ---------- Admin Dashboard Summary Cards ---------- */
-.summary-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  gap: 14px;
-  margin-bottom: 24px;
-}
-
-.stat-card {
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-radius: 16px;
-  padding: 16px 18px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.02);
-  border-left: 4px solid var(--primary);
-}
-
-.stat-card.stat-paid { border-left-color: var(--paid); }
-.stat-card.stat-due { border-left-color: var(--due); }
-.stat-card.stat-gold { border-left-color: var(--gold); }
-
-.stat-label {
-  font-size: 11.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted);
-  font-weight: 600;
-  margin-bottom: 6px;
-}
-
-.stat-value {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--ink);
-}
-
-/* ---------- Search Bar ---------- */
 .search-box {
   margin-bottom: 16px;
 }
 
 .search-input {
   width: 100%;
-  padding: 12px 16px;
-  border: 1.5px solid var(--card-border);
-  border-radius: 14px;
-  font-size: 14px;
-  background: #fff;
+  max-width: 380px;
+  padding: 10px 14px;
 }
 
-/* ---------- Student Welcome & Overview ---------- */
-.welcome-banner {
-  background: linear-gradient(135deg, rgba(156, 51, 73, 0.06) 0%, rgba(197, 155, 78, 0.12) 100%);
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--card-border);
-  border-radius: var(--radius);
-  padding: 24px;
-  margin-bottom: 24px;
 }
 
-.welcome-banner h2 {
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 28px;
-  color: var(--primary);
-  margin-bottom: 4px;
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--bg-surface);
+  font-size: 13px;
+  text-align: left;
 }
+
+th {
+  background: #F8F4EE;
+  padding: 12px 14px;
+  font-weight: 700;
+  color: var(--primary);
+  border-bottom: 1.5px solid var(--card-border);
+  white-space: nowrap;
+}
+
+td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--card-border);
+  vertical-align: middle;
+}
+
+tr:hover td {
+  background-color: #FAF8F5;
+}
+
+/* ============================================================
+   8. STUDENT LEDGER ROWS (Info Rows in index.html)
+   ============================================================ */
 
 .info-row {
   display: flex;
-  align-items: baseline;
   justify-content: space-between;
-  gap: 10px;
-  padding: 14px 0;
-  border-bottom: 1px dashed var(--card-border);
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--card-border);
+  font-size: 13.5px;
 }
 
-.info-row:last-child { border-bottom: none; }
+.info-row:last-child {
+  border-bottom: none;
+  background: #FFFDF9;
+}
 
 .info-row span {
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--muted);
+  color: var(--text-muted);
+  font-weight: 500;
 }
 
 .info-row strong {
-  font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
+  color: var(--text-main);
 }
 
-.info-row strong.name-value {
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 22px;
+.info-row .name-value {
+  font-size: 15px;
   color: var(--primary);
 }
 
-.stamp {
-  display: inline-block;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  padding: 4px 10px;
-  border-radius: 6px;
-  border: 1px solid currentColor;
-  margin-left: 8px;
-}
-
-.success { color: var(--paid); }
-.danger { color: var(--due); }
-
-/* ---------- Exam Result Card UI ---------- */
+/* Result Box in Student Portal */
 .result-card-box {
-  background: #FCFAF7;
-  border: 1.5px dashed var(--card-border);
-  border-radius: 16px;
-  padding: 20px;
-  margin-top: 10px;
+  background: linear-gradient(145deg, #FAF6EE 0%, #FFFFFF 100%);
+  border: 1.5px solid rgba(196, 154, 69, 0.35);
+  border-radius: var(--radius-sm);
+  padding: 18px;
 }
 
 .result-grid-display {
@@ -452,138 +631,120 @@ input:focus, select:focus {
   text-align: center;
 }
 
-.result-stat-item {
-  background: #fff;
-  padding: 14px;
-  border-radius: 12px;
-  border: 1px solid var(--card-border);
-}
-
 .result-stat-item span {
   display: block;
   font-size: 11px;
-  text-transform: uppercase;
-  color: var(--muted);
-  font-weight: 700;
-  letter-spacing: 0.06em;
+  font-weight: 600;
+  color: var(--text-muted);
   margin-bottom: 4px;
 }
 
 .result-stat-item strong {
-  font-size: 20px;
-  color: var(--ink);
-}
-
-.badge-pass {
-  background: var(--paid-bg);
-  color: var(--paid);
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-weight: 700;
-  font-size: 13px;
-  display: inline-block;
-  border: 1px solid var(--paid);
-}
-
-.badge-fail {
-  background: var(--due-bg);
-  color: var(--due);
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-weight: 700;
-  font-size: 13px;
-  display: inline-block;
-  border: 1px solid var(--due);
-}
-
-/* ---------- Admin Layout & Table ---------- */
-.grid-form {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px 18px;
-}
-
-.grid-form button {
-  grid-column: 1 / -1;
-  margin-top: 14px;
-  justify-self: start;
-}
-
-.table-wrap {
-  overflow-x: auto;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-th {
-  text-align: left;
-  font-size: 11.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted);
-  padding: 12px 10px;
-  border-bottom: 2px solid var(--card-border);
-  white-space: nowrap;
-}
-
-td {
-  padding: 14px 10px;
-  border-bottom: 1px solid var(--card-border);
-  font-size: 13.5px;
-  white-space: nowrap;
-}
-
-td:first-child {
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 800;
   color: var(--primary);
 }
 
-.actions {
-  display: flex;
-  gap: 6px;
-  align-items: center;
+/* ============================================================
+   9. STATUS BADGES & ERROR MESSAGES
+   ============================================================ */
+
+.success { color: var(--success); }
+.danger { color: var(--danger); }
+.muted { color: var(--text-muted); }
+
+.error {
+  color: var(--danger);
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-top: 10px;
+  text-align: center;
 }
 
-/* Modal Styling for Result Update */
+.status {
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  display: none;
+  margin-top: 14px;
+}
+
+.status:not(:empty) {
+  display: block;
+}
+
+.status.danger {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border: 1px solid rgba(178, 34, 34, 0.2);
+}
+
+.status.success {
+  background: var(--success-bg);
+  color: var(--success);
+  border: 1px solid rgba(30, 126, 52, 0.2);
+}
+
+.stamp,
+.badge-pass,
+.badge-fail {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 14px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.stamp.success,
+.badge-pass {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.stamp.danger,
+.badge-fail {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+/* ============================================================
+   10. MODAL: UPDATE RESULT
+   ============================================================ */
+
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 999;
-  padding: 20px;
+  z-index: 1000;
+  padding: 16px;
 }
 
 .modal-content {
-  background: #fff;
-  border-radius: var(--radius);
-  padding: 28px;
+  background: var(--bg-surface);
   width: 100%;
-  max-width: 440px;
-  box-shadow: var(--shadow);
+  max-width: 420px;
+  border-radius: var(--radius-md);
+  padding: 24px;
+  box-shadow: var(--shadow-lg);
+  border: 1.5px solid rgba(196, 154, 69, 0.35);
 }
 
-/* ---------- Animations ---------- */
-@keyframes rise {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+/* ============================================================
+   11. RESPONSIVE MEDIA QUERIES
+   ============================================================ */
 
-@keyframes pulseLogo {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.03); }
-}
-
-@media (max-width: 600px) {
+@media (max-width: 650px) {
+  .topbar { padding: 10px 14px; }
+  .card { padding: 18px 14px; }
+  .auth-card { padding: 30px 20px 20px; max-width: 345px; }
   .grid-form { grid-template-columns: 1fr; }
-  .result-grid-display { grid-template-columns: 1fr; }
-  .topbar { padding: 14px 16px; flex-direction: column; gap: 12px; align-items: flex-start; }
-  .topbar-actions { align-self: flex-end; }
-  .container { padding: 20px 14px 50px; }
-  .auth-card { padding: 26px 20px; }
+  .result-grid-display { grid-template-columns: 1fr; gap: 10px; }
+  .info-row { padding: 10px 12px; font-size: 12.5px; }
 }
