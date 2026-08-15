@@ -37,6 +37,7 @@ loginForm.addEventListener('submit', async (e) => {
   const btn = loginForm.querySelector('button');
   btn.disabled = true;
   try {
+    await auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
     await auth.signInWithEmailAndPassword(email, password);
   } catch (err) {
     loginError.textContent = friendlyError(err.code) || 'Login nahi ho paya.';
