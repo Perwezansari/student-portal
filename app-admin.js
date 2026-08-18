@@ -1,7 +1,10 @@
-// Data Layer and Application View Controllers
+// ============================================================
+// Admin Portal Logic 
+// ============================================================
+
 const loginView = document.getElementById('loginView');
 const dashboardView = document.getElementById('dashboardView');
-const storeDashboardView = document.getElementById('storeDashboardView');
+const storeDashboardView = document.getElementById('storeDashboardView'); 
 const loginForm = document.getElementById('loginForm');
 const loginError = document.getElementById('loginError');
 const logoutBtn = document.getElementById('logoutBtn');
@@ -12,134 +15,156 @@ const searchInput = document.getElementById('searchInput');
 const searchStoreInput = document.getElementById('searchStoreInput');
 
 let allStudentsCache = [];
-let allProductsCache = [];
+let allProductsCache = []; 
 let allStoreStudentsCache = [];
 
 auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(() => {});
 
-// Navigation View Routing
-document.getElementById('navToStoreBtn').addEventListener('click', () => {
-  dashboardView.classList.add('view-state-hidden');
-  storeDashboardView.classList.remove('view-state-hidden');
-  loadStoreData();
-});
+// --- Navigation Toggle ---
+const navToStoreBtn = document.getElementById('navToStoreBtn');
+if (navToStoreBtn) {
+  navToStoreBtn.addEventListener('click', () => {
+    if (dashboardView) dashboardView.style.display = 'none';
+    if (storeDashboardView) storeDashboardView.style.display = 'block';
+    loadStoreData();
+  });
+}
 
-document.getElementById('navToMainBtn').addEventListener('click', () => {
-  storeDashboardView.classList.add('view-state-hidden');
-  dashboardView.classList.remove('view-state-hidden');
-  loadStudents();
-});
+const navToMainBtn = document.getElementById('navToMainBtn');
+if (navToMainBtn) {
+  navToMainBtn.addEventListener('click', () => {
+    if (storeDashboardView) storeDashboardView.style.display = 'none';
+    if (dashboardView) dashboardView.style.display = 'block';
+    loadStudents();
+  });
+}
 
-// Authentication Observer
+// --- Auth State Observer ---
 auth.onAuthStateChanged(async (user) => {
-  loginError.textContent = '';
+  if (loginError) loginError.textContent = '';
   if (user) {
     try {
       const adminDoc = await db.collection('admins').doc(user.uid).get();
       if (adminDoc.exists) {
-        loginView.classList.add('view-state-hidden');
-        dashboardView.classList.remove('view-state-hidden');
+        if (loginView) loginView.style.display = 'none';
+        if (dashboardView) dashboardView.style.display = 'block';
         loadStudents();
       } else {
         await auth.signOut();
-        loginError.textContent = 'Access Denied: Administrative privileges required.';
-        loginView.classList.remove('view-state-hidden');
-        dashboardView.classList.add('view-state-hidden');
+        if (loginError) loginError.textContent = 'Access Denied: Administrative privileges required.';
+        if (loginView) loginView.style.display = 'flex';
+        if (dashboardView) dashboardView.style.display = 'none';
       }
     } catch (err) {
+      console.error(err);
       await auth.signOut();
-      loginView.classList.remove('view-state-hidden');
-      dashboardView.classList.add('view-state-hidden');
+      if (loginView) loginView.style.display = 'flex';
+      if (dashboardView) dashboardView.style.display = 'none';
     }
   } else {
-    loginView.classList.remove('view-state-hidden');
-    dashboardView.classList.add('view-state-hidden');
-    storeDashboardView.classList.add('view-state-hidden');
+    if (loginView) loginView.style.display = 'flex';
+    if (dashboardView) dashboardView.style.display = 'none';
+    if (storeDashboardView) storeDashboardView.style.display = 'none';
   }
 });
 
-// Login Handler
 loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
-  loginError.textContent = '';
+  if (loginError) loginError.textContent = '';
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
   const btn = loginForm.querySelector('button[type="submit"]');
 
-  btn.disabled = true;
-  btn.textContent = 'Verifying...';
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Verifying...';
+  }
 
   try {
     await auth.signInWithEmailAndPassword(email, password);
   } catch (err) {
-    loginError.textContent = formatAuthErrorMessage(err.code) || 'Authentication failed.';
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Login to Admin Panel';
-  }
-});
-
-logoutBtn.addEventListener('click', async () => {
-  await auth.signOut();
-});
-
-// Registration Controller
-addForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const submitBtn = addForm.querySelector('button[type="submit"]');
-  submitBtn.disabled = true;
-  addStatus.textContent = 'Processing registration...';
-  addStatus.className = 'status';
-
-  const name = document.getElementById('sName').value.trim();
-  const admissionDate = document.getElementById('sDate').value;
-  const totalFee = Number(document.getElementById('sTotal').value) || 0;
-  const discount = Number(document.getElementById('sDiscount').value) || 0;
-  const paidFee = Number(document.getElementById('sPaid').value) || 0;
-  const email = document.getElementById('sEmail').value.trim();
-  const password = document.getElementById('sPassword').value;
-
-  let secondaryApp;
-  try {
-    secondaryApp = firebase.initializeApp(firebaseConfig, 'SecondaryAuthInstance-' + Date.now());
-    const credentials = await secondaryApp.auth().createUserWithEmailAndPassword(email, password);
-    const uid = credentials.user.uid;
-    await secondaryApp.auth().signOut();
-    await secondaryApp.delete();
-    secondaryApp = null;
-
-    await db.collection('students').doc(uid).set({
-      name,
-      admissionDate,
-      totalFee,
-      discount,
-      paidFee,
-      email,
-      password,
-      result: null,
-      storeItems: [],
-      storePaid: 0
-    });
-
-    addStatus.textContent = `Student ${name} successfully enrolled.`;
-    addStatus.className = 'status success';
-    addForm.reset();
-    document.getElementById('sDiscount').value = 0;
-    document.getElementById('sPaid').value = 0;
-    loadStudents();
-  } catch (err) {
-    addStatus.textContent = formatAuthErrorMessage(err.code) || 'Unable to register student.';
-    addStatus.className = 'status danger';
-  } finally {
-    if (secondaryApp) {
-      try { await secondaryApp.delete(); } catch (_) {}
+    if (loginError) loginError.textContent = formatAuthErrorMessage(err.code) || 'Authentication failed.';
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Login to Admin Panel';
     }
-    submitBtn.disabled = false;
   }
 });
 
-// Student Ledger Loading and Summarization
+if (logoutBtn) {
+  logoutBtn.addEventListener('click', async () => {
+    await auth.signOut();
+  });
+}
+
+// --- Add Student Logic ---
+if (addForm) {
+  addForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const submitBtn = addForm.querySelector('button[type="submit"]');
+    if (submitBtn) submitBtn.disabled = true;
+    if (addStatus) {
+      addStatus.textContent = 'Processing registration...';
+      addStatus.className = 'status';
+    }
+
+    const name = document.getElementById('sName').value.trim();
+    const admissionDate = document.getElementById('sDate').value;
+    const totalFee = Number(document.getElementById('sTotal').value) || 0;
+    const discount = Number(document.getElementById('sDiscount').value) || 0;
+    const paidFee = Number(document.getElementById('sPaid').value) || 0;
+    const email = document.getElementById('sEmail').value.trim();
+    const password = document.getElementById('sPassword').value;
+
+    let secondaryApp;
+    try {
+      secondaryApp = firebase.initializeApp(firebaseConfig, 'SecondaryAuthInstance-' + Date.now());
+      const credentials = await secondaryApp.auth().createUserWithEmailAndPassword(email, password);
+      const uid = credentials.user.uid;
+      await secondaryApp.auth().signOut();
+      await secondaryApp.delete();
+      secondaryApp = null;
+
+      await db.collection('students').doc(uid).set({
+        name,
+        admissionDate,
+        totalFee,
+        discount,
+        paidFee,
+        email,
+        password,
+        result: null,
+        storeItems: [],
+        storePaid: 0
+      });
+
+      if (addStatus) {
+        addStatus.textContent = `Student ${name} successfully enrolled.`;
+        addStatus.className = 'status success';
+      }
+      addForm.reset();
+      const discElem = document.getElementById('sDiscount');
+      const paidElem = document.getElementById('sPaid');
+      if (discElem) discElem.value = 0;
+      if (paidElem) paidElem.value = 0;
+      loadStudents();
+    } catch (err) {
+      if (addStatus) {
+        addStatus.textContent = formatAuthErrorMessage(err.code) || 'Unable to register student.';
+        addStatus.className = 'status danger';
+      }
+    } finally {
+      if (secondaryApp) {
+        try { await secondaryApp.delete(); } catch (_) {}
+      }
+      if (submitBtn) submitBtn.disabled = false;
+    }
+  });
+}
+
+// --- Fetch & Render Main Students Ledger ---
 async function loadStudents() {
+  if (!studentsBody) return;
   studentsBody.innerHTML = '<tr><td colspan="8" class="muted">Loading records...</td></tr>';
   try {
     const snapshot = await db.collection('students').orderBy('name').get();
@@ -150,6 +175,7 @@ async function loadStudents() {
     updateSummaryMetrics(allStudentsCache);
     renderStudentsLedger(allStudentsCache);
   } catch (err) {
+    console.error(err);
     studentsBody.innerHTML = `<tr><td colspan="8" class="danger text-bold">Error loading records: ${err.message}</td></tr>`;
   }
 }
@@ -171,13 +197,19 @@ function updateSummaryMetrics(students) {
     totalDiscount += disc;
   });
 
-  document.getElementById('statStudents').textContent = totalStudents;
-  document.getElementById('statCollected').textContent = '₹' + totalPaid.toLocaleString('en-IN');
-  document.getElementById('statDue').textContent = '₹' + totalDue.toLocaleString('en-IN');
-  document.getElementById('statDiscount').textContent = '₹' + totalDiscount.toLocaleString('en-IN');
+  const statStudents = document.getElementById('statStudents');
+  const statCollected = document.getElementById('statCollected');
+  const statDue = document.getElementById('statDue');
+  const statDiscount = document.getElementById('statDiscount');
+
+  if (statStudents) statStudents.textContent = totalStudents;
+  if (statCollected) statCollected.textContent = '₹' + totalPaid.toLocaleString('en-IN');
+  if (statDue) statDue.textContent = '₹' + totalDue.toLocaleString('en-IN');
+  if (statDiscount) statDiscount.textContent = '₹' + totalDiscount.toLocaleString('en-IN');
 }
 
 function renderStudentsLedger(students) {
+  if (!studentsBody) return;
   if (students.length === 0) {
     studentsBody.innerHTML = '<tr><td colspan="8" class="muted">No records available.</td></tr>';
     return;
@@ -208,11 +240,17 @@ function renderStudentsLedger(students) {
         ${d.result && d.result.isPublished ? `<span class="stamp ${d.result.status === 'PASS' ? 'success' : 'danger'}">${d.result.marks}</span>` : `<span class="muted table-text-muted">Not Set</span>`}
       </td>
       <td>
-        <input type="number" class="paidInput input-ledger-action" min="0" step="1" placeholder="₹ Paid">
-        <button class="btn small primary updateBtn" type="button" title="Save Payment">Save</button>
-        <button class="btn small ghost editBtn" type="button" title="Edit Record">✏️</button>
-        <button class="btn small ghost resultBtn" type="button" title="Record Result">📝</button>
-        <button class="btn small danger removeBtn" type="button" title="Delete Record">✕</button>
+        <div class="actions-cell">
+          <div class="action-row-group">
+            <input type="number" class="paidInput input-ledger-action" min="0" step="1" placeholder="₹ Paid">
+            <button class="btn small primary updateBtn" type="button" title="Save Payment">Save</button>
+          </div>
+          <div class="action-row-group">
+            <button class="btn small ghost editBtn" type="button" title="Edit Record">✏️ Edit</button>
+            <button class="btn small ghost resultBtn" type="button" title="Record Result">📝 Result</button>
+            <button class="btn small danger removeBtn" type="button" title="Delete Record">✕</button>
+          </div>
+        </div>
       </td>
     `;
 
@@ -235,50 +273,57 @@ function renderStudentsLedger(students) {
   });
 }
 
-// Store Inventory and Ledger Controllers
+// --- Store Inventory and Ledger Controllers ---
 const productsBody = document.getElementById('productsBody');
 const storeStudentsBody = document.getElementById('storeStudentsBody');
 const addProductForm = document.getElementById('addProductForm');
 
 async function loadStoreData() {
-  try {
+  if (productsBody) {
     productsBody.innerHTML = '<tr><td colspan="3" class="muted">Loading catalog...</td></tr>';
-    const pSnap = await db.collection('products').orderBy('name').get();
-    allProductsCache = [];
-    pSnap.forEach((doc) => allProductsCache.push({ id: doc.id, ...doc.data() }));
-    renderProductsTable();
-  } catch (err) {
-    productsBody.innerHTML = `<tr><td colspan="3" class="danger">Error loading inventory catalog.</td></tr>`;
+    try {
+      const pSnap = await db.collection('products').orderBy('name').get();
+      allProductsCache = [];
+      pSnap.forEach((doc) => allProductsCache.push({ id: doc.id, ...doc.data() }));
+      renderProductsTable();
+    } catch (err) {
+      productsBody.innerHTML = `<tr><td colspan="3" class="danger">Error loading inventory catalog.</td></tr>`;
+    }
   }
 
-  try {
+  if (storeStudentsBody) {
     storeStudentsBody.innerHTML = '<tr><td colspan="6" class="muted">Loading store transactions...</td></tr>';
-    const sSnap = await db.collection('students').orderBy('name').get();
-    allStoreStudentsCache = [];
-    sSnap.forEach((doc) => allStoreStudentsCache.push({ id: doc.id, ...doc.data() }));
-    renderStoreStudentsTable(allStoreStudentsCache);
-  } catch (err) {
-    storeStudentsBody.innerHTML = `<tr><td colspan="6" class="danger">Error loading store transactions.</td></tr>`;
+    try {
+      const sSnap = await db.collection('students').orderBy('name').get();
+      allStoreStudentsCache = [];
+      sSnap.forEach((doc) => allStoreStudentsCache.push({ id: doc.id, ...doc.data() }));
+      renderStoreStudentsTable(allStoreStudentsCache);
+    } catch (err) {
+      storeStudentsBody.innerHTML = `<tr><td colspan="6" class="danger">Error loading store transactions.</td></tr>`;
+    }
   }
 }
 
-addProductForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const name = document.getElementById('pName').value.trim();
-  const price = Number(document.getElementById('pPrice').value);
-  const btn = addProductForm.querySelector('button');
-  btn.disabled = true;
-  try {
-    await db.collection('products').add({ name, price });
-    addProductForm.reset();
-    loadStoreData();
-  } catch (err) {
-    alert("Unable to save product.");
-  }
-  btn.disabled = false;
-});
+if (addProductForm) {
+  addProductForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('pName').value.trim();
+    const price = Number(document.getElementById('pPrice').value);
+    const btn = addProductForm.querySelector('button');
+    if (btn) btn.disabled = true;
+    try {
+      await db.collection('products').add({ name, price });
+      addProductForm.reset();
+      loadStoreData();
+    } catch (err) {
+      alert("Unable to save product.");
+    }
+    if (btn) btn.disabled = false;
+  });
+}
 
 function renderProductsTable() {
+  if (!productsBody) return;
   if (allProductsCache.length === 0) {
     productsBody.innerHTML = '<tr><td colspan="3" class="muted">Inventory catalog is empty.</td></tr>';
     return;
@@ -303,6 +348,7 @@ async function deleteProduct(id, name) {
 }
 
 function renderStoreStudentsTable(students) {
+  if (!storeStudentsBody) return;
   if (students.length === 0) {
     storeStudentsBody.innerHTML = '<tr><td colspan="6" class="muted">No student ledger data found.</td></tr>';
     return;
@@ -366,34 +412,37 @@ function openAssignModal(student) {
     select.appendChild(opt);
   });
 
-  document.getElementById('assignProductModal').classList.remove('view-state-hidden');
+  document.getElementById('assignProductModal').style.display = 'flex';
 }
 
 function closeAssignModal() {
-  document.getElementById('assignProductModal').classList.add('view-state-hidden');
+  document.getElementById('assignProductModal').style.display = 'none';
 }
 
-document.getElementById('assignProductForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const studentId = document.getElementById('assignStudentId').value;
-  const productVal = document.getElementById('assignProductSelect').value;
-  if (!productVal) return;
+const assignProductForm = document.getElementById('assignProductForm');
+if (assignProductForm) {
+  assignProductForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const studentId = document.getElementById('assignStudentId').value;
+    const productVal = document.getElementById('assignProductSelect').value;
+    if (!productVal) return;
 
-  const [pName, pPrice] = productVal.split('|');
-  const newItem = { productName: pName, price: Number(pPrice), date: new Date().toISOString() };
+    const [pName, pPrice] = productVal.split('|');
+    const newItem = { productName: pName, price: Number(pPrice), date: new Date().toISOString() };
 
-  try {
-    await db.collection('students').doc(studentId).update({
-      storeItems: firebase.firestore.FieldValue.arrayUnion(newItem)
-    });
-    closeAssignModal();
-    loadStoreData();
-  } catch (error) {
-    alert('Failed to register product assignment.');
-  }
-});
+    try {
+      await db.collection('students').doc(studentId).update({
+        storeItems: firebase.firestore.FieldValue.arrayUnion(newItem)
+      });
+      closeAssignModal();
+      loadStoreData();
+    } catch (error) {
+      alert('Failed to register product assignment.');
+    }
+  });
+}
 
-// Modal Operations and Entity Mutations
+// --- Modal Operations and Entity Mutations ---
 function openEditModal(student) {
   document.getElementById('editStudentId').value = student.id;
   document.getElementById('editName').value = student.name || '';
@@ -403,11 +452,11 @@ function openEditModal(student) {
   document.getElementById('editTotalFee').value = student.totalFee || 0;
   document.getElementById('editDiscount').value = student.discount || 0;
 
-  document.getElementById('editStudentModal').classList.remove('view-state-hidden');
+  document.getElementById('editStudentModal').style.display = 'flex';
 }
 
 function closeEditModal() {
-  document.getElementById('editStudentModal').classList.add('view-state-hidden');
+  document.getElementById('editStudentModal').style.display = 'none';
 }
 
 async function updateStudentDatabase() {
@@ -435,24 +484,28 @@ async function updateStudentDatabase() {
   }
 }
 
-// Search Filter Handlers
-searchInput.addEventListener('input', (e) => {
-  const query = e.target.value.toLowerCase().trim();
-  const filtered = allStudentsCache.filter((s) => {
-    return (s.name || '').toLowerCase().includes(query) || (s.email || '').toLowerCase().includes(query);
+// --- Search Filter Handlers ---
+if (searchInput) {
+  searchInput.addEventListener('input', (e) => {
+    const query = e.target.value.toLowerCase().trim();
+    const filtered = allStudentsCache.filter((s) => {
+      return (s.name || '').toLowerCase().includes(query) || (s.email || '').toLowerCase().includes(query);
+    });
+    renderStudentsLedger(filtered);
   });
-  renderStudentsLedger(filtered);
-});
+}
 
-searchStoreInput.addEventListener('input', (e) => {
-  const query = e.target.value.toLowerCase().trim();
-  const filtered = allStoreStudentsCache.filter((s) => {
-    return (s.name || '').toLowerCase().includes(query);
+if (searchStoreInput) {
+  searchStoreInput.addEventListener('input', (e) => {
+    const query = e.target.value.toLowerCase().trim();
+    const filtered = allStoreStudentsCache.filter((s) => {
+      return (s.name || '').toLowerCase().includes(query);
+    });
+    renderStoreStudentsTable(filtered);
   });
-  renderStoreStudentsTable(filtered);
-});
+}
 
-// Examination Result Management
+// --- Examination Result Management ---
 const resultModalDialog = document.getElementById('resultModal');
 function openResultEditor(student) {
   document.getElementById('resultStudentId').value = student.id;
@@ -465,38 +518,47 @@ function openResultEditor(student) {
     document.getElementById('rGrade').value = '';
     document.getElementById('rStatus').value = 'PASS';
   }
-  resultModalDialog.classList.remove('view-state-hidden');
+  if (resultModalDialog) resultModalDialog.style.display = 'flex';
 }
 
-document.getElementById('closeResultModal').addEventListener('click', () => {
-  resultModalDialog.classList.add('view-state-hidden');
-});
+const closeResultModalBtn = document.getElementById('closeResultModal');
+if (closeResultModalBtn) {
+  closeResultModalBtn.addEventListener('click', () => {
+    if (resultModalDialog) resultModalDialog.style.display = 'none';
+  });
+}
 
-document.getElementById('resultForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const id = document.getElementById('resultStudentId').value;
-  await db.collection('students').doc(id).update({
-    result: {
-      marks: document.getElementById('rMarks').value.trim(),
-      grade: document.getElementById('rGrade').value.trim().toUpperCase(),
-      status: document.getElementById('rStatus').value,
-      isPublished: true
+const resultForm = document.getElementById('resultForm');
+if (resultForm) {
+  resultForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('resultStudentId').value;
+    await db.collection('students').doc(id).update({
+      result: {
+        marks: document.getElementById('rMarks').value.trim(),
+        grade: document.getElementById('rGrade').value.trim().toUpperCase(),
+        status: document.getElementById('rStatus').value,
+        isPublished: true
+      }
+    });
+    if (resultModalDialog) resultModalDialog.style.display = 'none';
+    loadStudents();
+  });
+}
+
+const btnRemoveResult = document.getElementById('btnRemoveResult');
+if (btnRemoveResult) {
+  btnRemoveResult.addEventListener('click', async () => {
+    const id = document.getElementById('resultStudentId').value;
+    if (confirm('Unpublish and clear examination results?')) {
+      await db.collection('students').doc(id).update({ result: null });
+      if (resultModalDialog) resultModalDialog.style.display = 'none';
+      loadStudents();
     }
   });
-  resultModalDialog.classList.add('view-state-hidden');
-  loadStudents();
-});
+}
 
-document.getElementById('btnRemoveResult').addEventListener('click', async () => {
-  const id = document.getElementById('resultStudentId').value;
-  if (confirm('Unpublish and clear examination results?')) {
-    await db.collection('students').doc(id).update({ result: null });
-    resultModalDialog.classList.add('view-state-hidden');
-    loadStudents();
-  }
-});
-
-// Sanitization and Error Translation Helpers
+// --- Sanitization and Error Translation Helpers ---
 function formatAuthErrorMessage(code) {
   switch (code) {
     case 'auth/email-already-in-use': return 'The provided email is already registered.';
