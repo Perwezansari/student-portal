@@ -1,4 +1,6 @@
-// Student Portal Application Logic
+// ============================================================
+// Student Portal Application Logic (Stable & Error-Free)
+// ============================================================
 const loginView = document.getElementById('loginView');
 const dashboardView = document.getElementById('dashboardView');
 
@@ -12,68 +14,76 @@ const btnPrintReceipt = document.getElementById('btnPrintReceipt');
 
 let loggedInStudentData = null;
 
-// Firebase Authentication Configuration
 auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(() => {});
 
 function resetLoginFormState() {
-  loginForm.reset();
-  const submitButton = loginForm.querySelector('button[type="submit"]');
+  if (loginForm) loginForm.reset();
+  const submitButton = loginForm ? loginForm.querySelector('button[type="submit"]') : null;
   if (submitButton) {
     submitButton.disabled = false;
     submitButton.textContent = 'Login to Dashboard';
   }
 }
 
-// Authentication State Observer
 auth.onAuthStateChanged(async (user) => {
-  loginError.textContent = '';
+  if (loginError) loginError.textContent = '';
   if (user && user.email) {
     await fetchStudentProfile(user.uid);
   } else {
     loggedInStudentData = null;
-    dashboardView.style.display = 'none';
-    loginView.style.display = 'flex';
+    if (dashboardView) dashboardView.style.display = 'none';
+    if (loginView) loginView.style.display = 'flex';
     resetLoginFormState();
   }
 });
 
-// Authentication Request Handler
-loginForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  loginError.textContent = '';
-  const email = document.getElementById('email').value.trim();
-  const password = document.getElementById('password').value;
-  const submitButton = loginForm.querySelector('button[type="submit"]');
+if (loginForm) {
+  loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (loginError) loginError.textContent = '';
+    
+    const emailField = document.getElementById('email');
+    const passwordField = document.getElementById('password');
+    if (!emailField || !passwordField) return;
 
-  submitButton.disabled = true;
-  submitButton.textContent = 'Verifying...';
+    const email = emailField.value.trim();
+    const password = passwordField.value;
+    const submitButton = loginForm.querySelector('button[type="submit"]');
 
-  try {
-    await auth.signInWithEmailAndPassword(email, password);
-  } catch (error) {
-    loginError.textContent = formatAuthErrorMessage(error.code) || 'Authentication failed.';
-  } finally {
-    submitButton.disabled = false;
-    submitButton.textContent = 'Login to Dashboard';
-  }
-});
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.textContent = 'Verifying...';
+    }
 
-// Logout Event Handler
-logoutBtn.addEventListener('click', async () => {
-  resetLoginFormState();
-  await auth.signOut();
-});
+    try {
+      await auth.signInWithEmailAndPassword(email, password);
+      // Success par 'onAuthStateChanged' khud dashboard open kar dega
+    } catch (error) {
+      if (loginError) loginError.textContent = formatAuthErrorMessage(error.code) || 'Authentication failed.';
+      if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.textContent = 'Login to Dashboard';
+      }
+    }
+  });
+}
 
-// Data Hydration and Dashboard Rendering
+if (logoutBtn) {
+  logoutBtn.addEventListener('click', async () => {
+    resetLoginFormState();
+    await auth.signOut();
+  });
+}
+
 async function fetchStudentProfile(uid) {
   try {
     const documentSnapshot = await db.collection('students').doc(uid).get();
 
     if (!documentSnapshot.exists) {
       await auth.signOut();
-      loginError.textContent = 'No associated student record found for this profile.';
-      dashboardView.style.display = 'none';
-      loginView.style.display = 'flex';
+      if (loginError) loginError.textContent = 'No student record found. Access denied.';
+      if (dashboardView) dashboardView.style.display = 'none';
+      if (loginView) loginView.style.display = 'flex';
       resetLoginFormState();
       return;
     }
@@ -81,9 +91,9 @@ async function fetchStudentProfile(uid) {
     const dataPayload = documentSnapshot.data();
     loggedInStudentData = dataPayload;
     
-    loginView.style.display = 'none';
-    dashboardView.style.display = 'block';
-    welcomeStudentName.textContent = dataPayload.name || 'Student';
+    if (loginView) loginView.style.display = 'none';
+    if (dashboardView) dashboardView.style.display = 'block';
+    if (welcomeStudentName) welcomeStudentName.textContent = dataPayload.name || 'Student';
 
     // Financial Metrics Calculation
     const totalAmount = Number(dataPayload.totalFee) || 0;
@@ -93,137 +103,139 @@ async function fetchStudentProfile(uid) {
     const dueAmount = Math.max(0, netPayableAmount - paidAmount);
     const formattedAdmissionDate = formatDisplayDate(dataPayload.admissionDate);
 
-    // Ledger View Generation
-    dashboardContent.innerHTML = `
-      <div class="info-row"><span>Student Name</span><strong class="name-value">${sanitizeOutput(dataPayload.name || '-')}</strong></div>
-      <div class="info-row"><span>Admission Date</span><strong>${formattedAdmissionDate}</strong></div>
-      <div class="info-row"><span>Total Course Fee</span><strong>₹${totalAmount.toLocaleString('en-IN')}</strong></div>
-      <div class="info-row"><span>Discount Concession</span><strong class="gold-text">-₹${discountAmount.toLocaleString('en-IN')}</strong></div>
-      <div class="info-row"><span>Net Payable Fee</span><strong>₹${netPayableAmount.toLocaleString('en-IN')}</strong></div>
-      <div class="info-row"><span>Amount Paid</span><strong class="success">₹${paidAmount.toLocaleString('en-IN')}</strong></div>
-      <div class="info-row">
-        <span>Due Balance</span>
-        <strong class="${dueAmount > 0 ? 'danger' : 'success'}">₹${dueAmount.toLocaleString('en-IN')}
-          <span class="stamp ${dueAmount > 0 ? 'danger' : 'success'}">${dueAmount > 0 ? 'Due' : 'Cleared'}</span>
-        </strong>
-      </div>
-    `;
-
-    // Academic Performance View Generation
-    if (dataPayload.result && dataPayload.result.isPublished) {
-      resultSectionContent.innerHTML = `
-        <div class="result-card-box">
-          <div class="result-grid-display">
-            <div class="result-stat-item"><span>Marks Obtained</span><strong>${sanitizeOutput(dataPayload.result.marks || '-')}</strong></div>
-            <div class="result-stat-item"><span>Grade</span><strong class="result-stat-grade">${sanitizeOutput(dataPayload.result.grade || '-')}</strong></div>
-            <div class="result-stat-item"><span>Status</span><div><span class="${dataPayload.result.status === 'PASS' ? 'badge-pass' : 'badge-fail'}">${sanitizeOutput(dataPayload.result.status || 'PASS')}</span></div></div>
-          </div>
+    if (dashboardContent) {
+      dashboardContent.innerHTML = `
+        <div class="info-row"><span>Student Name</span><strong class="name-value">${sanitizeOutput(dataPayload.name || '-')}</strong></div>
+        <div class="info-row"><span>Admission Date</span><strong>${formattedAdmissionDate}</strong></div>
+        <div class="info-row"><span>Total Course Fee</span><strong>₹${totalAmount.toLocaleString('en-IN')}</strong></div>
+        <div class="info-row"><span>Discount Concession</span><strong class="gold-text">-₹${discountAmount.toLocaleString('en-IN')}</strong></div>
+        <div class="info-row"><span>Net Payable Fee</span><strong>₹${netPayableAmount.toLocaleString('en-IN')}</strong></div>
+        <div class="info-row"><span>Amount Paid</span><strong class="success">₹${paidAmount.toLocaleString('en-IN')}</strong></div>
+        <div class="info-row">
+          <span>Due Balance</span>
+          <strong class="${dueAmount > 0 ? 'danger' : 'success'}">₹${dueAmount.toLocaleString('en-IN')}
+            <span class="stamp ${dueAmount > 0 ? 'danger' : 'success'}">${dueAmount > 0 ? 'Due' : 'Cleared'}</span>
+          </strong>
         </div>
       `;
-    } else {
-      resultSectionContent.innerHTML = `<div class="result-card-box pending-state-box"><p class="pending-state-title">⏳ <strong>Examination results have not been published yet.</strong></p></div>`;
+    }
+
+    if (resultSectionContent) {
+      if (dataPayload.result && dataPayload.result.isPublished) {
+        resultSectionContent.innerHTML = `
+          <div class="result-card-box">
+            <div class="result-grid-display">
+              <div class="result-stat-item"><span>Marks Obtained</span><strong>${sanitizeOutput(dataPayload.result.marks || '-')}</strong></div>
+              <div class="result-stat-item"><span>Grade</span><strong class="result-stat-grade">${sanitizeOutput(dataPayload.result.grade || '-')}</strong></div>
+              <div class="result-stat-item"><span>Status</span><div><span class="${dataPayload.result.status === 'PASS' ? 'badge-pass' : 'badge-fail'}">${sanitizeOutput(dataPayload.result.status || 'PASS')}</span></div></div>
+            </div>
+          </div>
+        `;
+      } else {
+        resultSectionContent.innerHTML = `<div class="result-card-box pending-state-box"><p class="pending-state-title">⏳ <strong>Examination results have not been published yet.</strong></p></div>`;
+      }
     }
   } catch (error) {
+    console.error(error);
     await auth.signOut();
-    dashboardView.style.display = 'none';
-    loginView.style.display = 'flex';
+    if (dashboardView) dashboardView.style.display = 'none';
+    if (loginView) loginView.style.display = 'flex';
     resetLoginFormState();
-    loginError.textContent = 'Session validation error. Please log in again.';
+    if (loginError) loginError.textContent = 'Session error. Please log in again.';
   }
 }
 
-// PDF Document Generation Controller
-btnPrintReceipt.addEventListener('click', () => {
-  if (!loggedInStudentData) return;
-  
-  const studentRecord = loggedInStudentData;
-  const courseTotal = Number(studentRecord.totalFee) || 0;
-  const courseDiscount = Number(studentRecord.discount) || 0;
-  const courseNet = Math.max(0, courseTotal - courseDiscount);
-  const coursePaid = Number(studentRecord.paidFee) || 0;
-  const courseDue = Math.max(0, courseNet - coursePaid);
-  
-  const admissionDisplayDate = formatDisplayDate(studentRecord.admissionDate);
-  const currentPrintDate = new Date().toLocaleDateString('en-IN');
+if (btnPrintReceipt) {
+  btnPrintReceipt.addEventListener('click', () => {
+    if (!loggedInStudentData) return;
+    
+    const studentRecord = loggedInStudentData;
+    const courseTotal = Number(studentRecord.totalFee) || 0;
+    const courseDiscount = Number(studentRecord.discount) || 0;
+    const courseNet = Math.max(0, courseTotal - courseDiscount);
+    const coursePaid = Number(studentRecord.paidFee) || 0;
+    const courseDue = Math.max(0, courseNet - coursePaid);
+    
+    const admissionDisplayDate = formatDisplayDate(studentRecord.admissionDate);
+    const currentPrintDate = new Date().toLocaleDateString('en-IN');
 
-  const documentWindow = window.open('', '_blank');
-  if (!documentWindow) {
-    alert('Pop-up blocked. Please enable browser pop-ups to print receipts.');
-    return;
-  }
+    const documentWindow = window.open('', '_blank');
+    if (!documentWindow) {
+      alert('Pop-up blocked. Please enable browser pop-ups to print receipts.');
+      return;
+    }
 
-  documentWindow.document.open();
-  documentWindow.document.write(`
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <!-- MOBILE VIEWPORT TAG ADDED HERE TO FIX ZOOM ISSUE -->
-      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-      <title>Fee Receipt - ${sanitizeOutput(studentRecord.name || 'Student')}</title>
-      <link rel="stylesheet" href="style.css">
-      <style>
-        * { box-sizing: border-box; }
-        body { background: #FAF7F2; padding: 16px; display: flex; flex-direction: column; align-items: center; margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
-        .receipt-action-bar { width: 100%; max-width: 500px; display: flex; gap: 10px; margin-bottom: 16px; }
-        .receipt-card { width: 100%; max-width: 500px; background: #fff; border: 2px solid #C49A45; border-radius: 12px; padding: 24px 18px; }
-        .receipt-header { text-align: center; border-bottom: 2px solid #F0EAE1; padding-bottom: 14px; margin-bottom: 18px; }
-        .receipt-brand-title { color: #78202B; font-size: 22px; font-weight: 800; }
-        .receipt-brand-sub { font-size: 11px; font-weight: 700; color: #C49A45; letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
-        .meta-table, .data-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 13.5px; }
-        .meta-label { color: #7A6E65; font-weight: 600; }
-        .meta-val { text-align: right; font-weight: 700; color: #111; }
-        .data-table th { background: #FAF7F2; padding: 8px 10px; text-align: left; font-size: 12px; color: #78202B; border-top: 1px solid #EADBCC; border-bottom: 1px solid #EADBCC; }
-        .data-table td { padding: 9px 10px; border-bottom: 1px dashed #F0EAE1; }
-        .text-right { text-align: right; }
-        .due-row td { color: ${courseDue > 0 ? '#B22222' : '#2E7D32'}; font-weight: 800; font-size: 15px; border-top: 1.5px solid #EADBCC; border-bottom: 1.5px solid #EADBCC; background: #FFF9F9; }
-        .receipt-footer { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 24px; }
-        .receipt-badge { font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 4px; background: #E8F5E9; color: #2E7D32; }
-        .signature-line { text-align: center; border-top: 1px solid #7A6E65; padding-top: 4px; width: 140px; font-size: 11px; font-weight: 600; color: #7A6E65; }
-        @media print {
-          .receipt-action-bar { display: none !important; }
-          .receipt-card { border: 1.5px solid #78202B; max-width: 100%; padding: 20px; }
-          body { background: white; padding: 0; }
-        }
-      </style>
-    </head>
-    <body>
-      <div class="receipt-action-bar">
-        <button class="btn primary btn-flex-fill" onclick="window.print()">📥 Save as PDF / Print</button>
-        <button class="btn ghost" onclick="window.close()">Close</button>
-      </div>
-      <div class="receipt-card">
-        <div class="receipt-header">
-          <div class="receipt-brand-title">Shama Henna Classes</div>
-          <div class="receipt-brand-sub">Official Fee Receipt</div>
+    documentWindow.document.open();
+    documentWindow.document.write(`
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <title>Fee Receipt - ${sanitizeOutput(studentRecord.name || 'Student')}</title>
+        <link rel="stylesheet" href="style.css">
+        <style>
+          * { box-sizing: border-box; }
+          body { background: #FAF7F2; padding: 16px; display: flex; flex-direction: column; align-items: center; margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+          .receipt-action-bar { width: 100%; max-width: 500px; display: flex; gap: 10px; margin-bottom: 16px; }
+          .receipt-card { width: 100%; max-width: 500px; background: #fff; border: 2px solid #C49A45; border-radius: 12px; padding: 24px 18px; }
+          .receipt-header { text-align: center; border-bottom: 2px solid #F0EAE1; padding-bottom: 14px; margin-bottom: 18px; }
+          .receipt-brand-title { color: #78202B; font-size: 22px; font-weight: 800; }
+          .receipt-brand-sub { font-size: 11px; font-weight: 700; color: #C49A45; letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
+          .meta-table, .data-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 13.5px; }
+          .meta-label { color: #7A6E65; font-weight: 600; }
+          .meta-val { text-align: right; font-weight: 700; color: #111; }
+          .data-table th { background: #FAF7F2; padding: 8px 10px; text-align: left; font-size: 12px; color: #78202B; border-top: 1px solid #EADBCC; border-bottom: 1px solid #EADBCC; }
+          .data-table td { padding: 9px 10px; border-bottom: 1px dashed #F0EAE1; }
+          .text-right { text-align: right; }
+          .due-row td { color: ${courseDue > 0 ? '#B22222' : '#2E7D32'}; font-weight: 800; font-size: 15px; border-top: 1.5px solid #EADBCC; border-bottom: 1.5px solid #EADBCC; background: #FFF9F9; }
+          .receipt-footer { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 24px; }
+          .receipt-badge { font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 4px; background: #E8F5E9; color: #2E7D32; }
+          .signature-line { text-align: center; border-top: 1px solid #7A6E65; padding-top: 4px; width: 140px; font-size: 11px; font-weight: 600; color: #7A6E65; }
+          @media print {
+            .receipt-action-bar { display: none !important; }
+            .receipt-card { border: 1.5px solid #78202B; max-width: 100%; padding: 20px; }
+            body { background: white; padding: 0; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="receipt-action-bar">
+          <button class="btn primary btn-flex-fill" onclick="window.print()">📥 Save as PDF / Print</button>
+          <button class="btn ghost" onclick="window.close()">Close</button>
         </div>
-        <table class="meta-table">
-          <tr><td class="meta-label">Student Name:</td><td class="meta-val">${sanitizeOutput(studentRecord.name || '-')}</td></tr>
-          <tr><td class="meta-label">Admission Date:</td><td class="meta-val">${admissionDisplayDate}</td></tr>
-          <tr><td class="meta-label">Receipt Date:</td><td class="meta-val">${currentPrintDate}</td></tr>
-        </table>
-        <table class="data-table">
-          <thead><tr><th>Description</th><th class="text-right">Amount</th></tr></thead>
-          <tbody>
-            <tr><td>Course Total Fee</td><td class="text-right">₹${courseTotal.toLocaleString('en-IN')}</td></tr>
-            <tr><td>Special Discount / Concession</td><td class="text-right gold-text">-₹${courseDiscount.toLocaleString('en-IN')}</td></tr>
-            <tr><td><strong>Net Payable Fee</strong></td><td class="text-right"><strong>₹${courseNet.toLocaleString('en-IN')}</strong></td></tr>
-            <tr><td class="success">Total Amount Paid</td><td class="text-right success text-bold">₹${coursePaid.toLocaleString('en-IN')}</td></tr>
-            <tr class="due-row"><td>Remaining Balance (Due)</td><td class="text-right">₹${courseDue.toLocaleString('en-IN')}</td></tr>
-          </tbody>
-        </table>
-        <div class="receipt-footer">
-          <div><span class="receipt-badge">Status: ${courseDue > 0 ? 'PARTIAL / DUE' : 'FULLY PAID'}</span></div>
-          <div class="signature-line">Authorized Signature</div>
+        <div class="receipt-card">
+          <div class="receipt-header">
+            <div class="receipt-brand-title">Shama Henna Classes</div>
+            <div class="receipt-brand-sub">Official Fee Receipt</div>
+          </div>
+          <table class="meta-table">
+            <tr><td class="meta-label">Student Name:</td><td class="meta-val">${sanitizeOutput(studentRecord.name || '-')}</td></tr>
+            <tr><td class="meta-label">Admission Date:</td><td class="meta-val">${admissionDisplayDate}</td></tr>
+            <tr><td class="meta-label">Receipt Date:</td><td class="meta-val">${currentPrintDate}</td></tr>
+          </table>
+          <table class="data-table">
+            <thead><tr><th>Description</th><th class="text-right">Amount</th></tr></thead>
+            <tbody>
+              <tr><td>Course Total Fee</td><td class="text-right">₹${courseTotal.toLocaleString('en-IN')}</td></tr>
+              <tr><td>Special Discount / Concession</td><td class="text-right gold-text">-₹${courseDiscount.toLocaleString('en-IN')}</td></tr>
+              <tr><td><strong>Net Payable Fee</strong></td><td class="text-right"><strong>₹${courseNet.toLocaleString('en-IN')}</strong></td></tr>
+              <tr><td class="success">Total Amount Paid</td><td class="text-right success text-bold">₹${coursePaid.toLocaleString('en-IN')}</td></tr>
+              <tr class="due-row"><td>Remaining Balance (Due)</td><td class="text-right">₹${courseDue.toLocaleString('en-IN')}</td></tr>
+            </tbody>
+          </table>
+          <div class="receipt-footer">
+            <div><span class="receipt-badge">Status: ${courseDue > 0 ? 'PARTIAL / DUE' : 'FULLY PAID'}</span></div>
+            <div class="signature-line">Authorized Signature</div>
+          </div>
         </div>
-      </div>
-    </body>
-    </html>
-  `);
-  documentWindow.document.close();
-});
+      </body>
+      </html>
+    `);
+    documentWindow.document.close();
+  });
+}
 
-// Utility Functions
 function formatDisplayDate(dateString) {
   if (!dateString) return '-';
   const parsedDate = new Date(dateString);
