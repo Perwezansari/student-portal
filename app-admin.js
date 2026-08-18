@@ -1,5 +1,5 @@
 // ============================================================
-// Admin Portal Logic 
+// Admin Portal Logic (Zero-Delay Instant UI & Full Store Control)
 // ============================================================
 
 const loginView = document.getElementById('loginView');
@@ -143,7 +143,7 @@ if (addForm) {
       await secondaryApp.delete();
       secondaryApp = null;
 
-      await db.collection('students').doc(uid).set({
+      const newStudentData = {
         name,
         admissionDate,
         totalFee,
@@ -154,7 +154,9 @@ if (addForm) {
         result: null,
         storeItems: [],
         storePaid: 0
-      });
+      };
+
+      await db.collection('students').doc(uid).set(newStudentData);
 
       if (addStatus) {
         addStatus.textContent = `Student ${name} successfully enrolled.`;
@@ -165,7 +167,11 @@ if (addForm) {
       const paidElem = document.getElementById('sPaid');
       if (discElem) discElem.value = 0;
       if (paidElem) paidElem.value = 0;
-      loadStudents();
+      
+      // Instant Local List Insertion
+      allStudentsCache.push({ id: uid, ...newStudentData });
+      updateSummaryMetrics(allStudentsCache);
+      renderStudentsLedger(allStudentsCache);
     } catch (err) {
       if (addStatus) {
         addStatus.textContent = formatAuthErrorMessage(err.code) || 'Unable to register student.';
@@ -183,7 +189,9 @@ if (addForm) {
 // --- Fetch & Render Main Students Ledger ---
 async function loadStudents() {
   if (!studentsBody) return;
-  studentsBody.innerHTML = '<tr><td colspan="8" class="muted">Loading records...</td></tr>';
+  if (allStudentsCache.length === 0) {
+    studentsBody.innerHTML = '<tr><td colspan="8" class="muted">Loading records...</td></tr>';
+  }
   try {
     const snapshot = await db.collection('students').orderBy('name').get();
     allStudentsCache = [];
@@ -272,21 +280,29 @@ function renderStudentsLedger(students) {
       </td>
     `;
 
+    // Instant Payment Update
     tr.querySelector('.updateBtn').addEventListener('click', async () => {
       const valInput = tr.querySelector('.paidInput').value;
       if (valInput === '') return;
       const newPayment = Number(valInput) || 0;
-      const updatedTotalPaid = paid + newPayment; 
-      await db.collection('students').doc(d.id).update({ paidFee: updatedTotalPaid });
-      loadStudents();
+      d.paidFee = paid + newPayment;
+      
+      // Instant Render
+      updateSummaryMetrics(allStudentsCache);
+      renderStudentsLedger(allStudentsCache);
+      
+      // Background Sync
+      db.collection('students').doc(d.id).update({ paidFee: d.paidFee });
     });
 
     tr.querySelector('.resultBtn').addEventListener('click', () => { openResultEditor(d); });
     tr.querySelector('.editBtn').addEventListener('click', () => { openEditModal(d); });
     tr.querySelector('.removeBtn').addEventListener('click', async () => {
       if (confirm(`Remove records for ${d.name}?`)) {
-        await db.collection('students').doc(d.id).delete();
-        loadStudents();
+        allStudentsCache = allStudentsCache.filter(s => s.id !== d.id);
+        updateSummaryMetrics(allStudentsCache);
+        renderStudentsLedger(allStudentsCache);
+        db.collection('students').doc(d.id).delete();
       }
     });
     studentsBody.appendChild(tr);
@@ -299,28 +315,28 @@ const storeStudentsBody = document.getElementById('storeStudentsBody');
 const addProductForm = document.getElementById('addProductForm');
 
 async function loadStoreData() {
-  if (productsBody) {
+  if (productsBody && allProductsCache.length === 0) {
     productsBody.innerHTML = '<tr><td colspan="3" class="muted">Loading catalog...</td></tr>';
-    try {
-      const pSnap = await db.collection('products').orderBy('name').get();
-      allProductsCache = [];
-      pSnap.forEach((doc) => allProductsCache.push({ id: doc.id, ...doc.data() }));
-      renderProductsTable();
-    } catch (err) {
-      productsBody.innerHTML = `<tr><td colspan="3" class="danger">Error loading inventory catalog.</td></tr>`;
-    }
+  }
+  try {
+    const pSnap = await db.collection('products').orderBy('name').get();
+    allProductsCache = [];
+    pSnap.forEach((doc) => allProductsCache.push({ id: doc.id, ...doc.data() }));
+    renderProductsTable();
+  } catch (err) {
+    if (productsBody) productsBody.innerHTML = `<tr><td colspan="3" class="danger">Error loading catalog.</td></tr>`;
   }
 
-  if (storeStudentsBody) {
+  if (storeStudentsBody && allStoreStudentsCache.length === 0) {
     storeStudentsBody.innerHTML = '<tr><td colspan="6" class="muted">Loading store transactions...</td></tr>';
-    try {
-      const sSnap = await db.collection('students').orderBy('name').get();
-      allStoreStudentsCache = [];
-      sSnap.forEach((doc) => allStoreStudentsCache.push({ id: doc.id, ...doc.data() }));
-      renderStoreStudentsTable(allStoreStudentsCache);
-    } catch (err) {
-      storeStudentsBody.innerHTML = `<tr><td colspan="6" class="danger">Error loading store transactions.</td></tr>`;
-    }
+  }
+  try {
+    const sSnap = await db.collection('students').orderBy('name').get();
+    allStoreStudentsCache = [];
+    sSnap.forEach((doc) => allStoreStudentsCache.push({ id: doc.id, ...doc.data() }));
+    renderStoreStudentsTable(allStoreStudentsCache);
+  } catch (err) {
+    if (storeStudentsBody) storeStudentsBody.innerHTML = `<tr><td colspan="6" class="danger">Error loading transactions.</td></tr>`;
   }
 }
 
@@ -332,9 +348,10 @@ if (addProductForm) {
     const btn = addProductForm.querySelector('button');
     if (btn) btn.disabled = true;
     try {
-      await db.collection('products').add({ name, price });
+      const docRef = await db.collection('products').add({ name, price });
+      allProductsCache.push({ id: docRef.id, name, price });
+      renderProductsTable();
       addProductForm.reset();
-      loadStoreData();
     } catch (err) {
       alert("Unable to save product.");
     }
@@ -362,8 +379,9 @@ function renderProductsTable() {
 
 async function deleteProduct(id, name) {
   if (confirm(`Delete ${name} from inventory?`)) {
-    await db.collection('products').doc(id).delete();
-    loadStoreData();
+    allProductsCache = allProductsCache.filter(p => p.id !== id);
+    renderProductsTable();
+    db.collection('products').doc(id).delete();
   }
 }
 
@@ -383,12 +401,13 @@ function renderStoreStudentsTable(students) {
     items.forEach(i => storeTotalBill += Number(i.price));
     const storeDue = Math.max(0, storeTotalBill - existingStorePaid);
 
+    // Modern Chip Layout
     let itemsText = '';
     if (items.length > 0) {
       itemsText = items.map((item, itemIdx) => `
-        <span class="store-item-badge" style="display:inline-flex; align-items:center; gap:4px; background:#EFE6DD; padding:2px 6px; border-radius:4px; font-size:11px; margin:2px;">
-          ${sanitizeOutput(item.productName)} (₹${item.price})
-          <button type="button" class="removeStoreItemBtn" data-student-id="${student.id}" data-item-index="${itemIdx}" style="background:none; border:none; color:#B22222; font-weight:bold; cursor:pointer; font-size:12px;" title="Remove Item">✕</button>
+        <span class="store-item-badge" style="display:inline-flex; align-items:center; background:#F8F4EE; border:1px solid #EADBCC; padding:4px 10px; border-radius:20px; font-size:11.5px; font-weight:600; margin:3px; color:var(--primary);">
+          ${sanitizeOutput(item.productName)} <span style="opacity:0.65; font-weight:500; margin-left:3px;">(₹${item.price})</span>
+          <button type="button" class="removeStoreItemBtn" data-student-id="${student.id}" data-item-index="${itemIdx}" style="background:transparent; border:none; color:#B22222; font-weight:bold; cursor:pointer; font-size:15px; margin-left:6px; padding:0; line-height:1; display:flex; align-items:center; opacity:0.6; transition:0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'" title="Remove Item">×</button>
         </span>
       `).join('');
     } else {
@@ -400,10 +419,7 @@ function renderStoreStudentsTable(students) {
       <td><strong>${index + 1}. ${sanitizeOutput(student.name)}</strong></td>
       <td>${itemsText}</td>
       <td class="text-bold">₹${storeTotalBill}</td>
-      <td class="success">
-        ₹${existingStorePaid}
-        ${existingStorePaid > 0 ? `<div style="margin-top:4px;"><button class="resetStorePaidBtn" style="background:none; border:none; color:var(--danger); font-size:10px; font-weight:bold; cursor:pointer; padding:0;" title="Reset Paid to Zero">↺ Reset 0</button></div>` : ''}
-      </td>
+      <td class="success text-bold">₹${existingStorePaid}</td>
       <td class="${storeDue > 0 ? 'danger' : 'success'} text-bold">₹${storeDue}</td>
       <td>
         <input type="number" class="storePaidInput input-ledger-action" min="0" step="1" placeholder="+ Add ₹">
@@ -412,51 +428,41 @@ function renderStoreStudentsTable(students) {
       </td>
     `;
 
-    // 1. Payment Accumulation (Plus karna)
-    tr.querySelector('.storeUpdateBtn').addEventListener('click', async () => {
+    // 1. Instant Payment Accumulation
+    tr.querySelector('.storeUpdateBtn').addEventListener('click', () => {
       const valInput = tr.querySelector('.storePaidInput').value;
       if (valInput === '') return;
       const newPayment = Number(valInput) || 0;
-      const updatedStorePaid = existingStorePaid + newPayment;
+      student.storePaid = existingStorePaid + newPayment;
 
-      await db.collection('students').doc(student.id).update({ storePaid: updatedStorePaid });
-      loadStoreData(); 
+      // Instant UI
+      renderStoreStudentsTable(allStoreStudentsCache);
+      
+      // Background Sync
+      db.collection('students').doc(student.id).update({ storePaid: student.storePaid });
     });
 
-    // 2. Manual Reset Paid Amount Feature
-    const resetBtn = tr.querySelector('.resetStorePaidBtn');
-    if (resetBtn) {
-      resetBtn.addEventListener('click', async () => {
-        if (confirm('Kya aap is student ka paid amount zero (0) karna chahte hain?')) {
-          await db.collection('students').doc(student.id).update({ storePaid: 0 });
-          loadStoreData();
-        }
-      });
-    }
-
-    // 3. Remove Specific Product Feature (AND AUTO-RESET)
+    // 2. Instant Remove Product & Auto-Reset
     tr.querySelectorAll('.removeStoreItemBtn').forEach(btn => {
-      btn.addEventListener('click', async () => {
+      btn.addEventListener('click', () => {
         const sId = btn.getAttribute('data-student-id');
         const idx = Number(btn.getAttribute('data-item-index'));
         
         if (confirm('Remove this product from student account?')) {
           const targetStudent = allStoreStudentsCache.find(s => s.id === sId);
           if (targetStudent && targetStudent.storeItems) {
-            const updatedItems = [...targetStudent.storeItems];
-            updatedItems.splice(idx, 1);
-            
-            // AUTOMATIC RESET LOGIC: Agar saare items delete ho gaye hain, toh paid amount ko bhi 0 kardo
-            let updatedPaid = existingStorePaid;
-            if (updatedItems.length === 0) {
-              updatedPaid = 0; // Sab shuru jaisa ho gaya
+            targetStudent.storeItems.splice(idx, 1);
+            if (targetStudent.storeItems.length === 0) {
+              targetStudent.storePaid = 0; // Auto-zero
             }
-            
-            await db.collection('students').doc(sId).update({ 
-              storeItems: updatedItems,
-              storePaid: updatedPaid 
+            // Instant render
+            renderStoreStudentsTable(allStoreStudentsCache);
+
+            // Background Sync
+            db.collection('students').doc(sId).update({ 
+              storeItems: targetStudent.storeItems,
+              storePaid: targetStudent.storePaid 
             });
-            loadStoreData();
           }
         }
       });
@@ -494,9 +500,10 @@ function closeAssignModal() {
   document.getElementById('assignProductModal').style.display = 'none';
 }
 
+// 3. Instant Product Assignment (Zero Delay)
 const assignProductForm = document.getElementById('assignProductForm');
 if (assignProductForm) {
-  assignProductForm.addEventListener('submit', async (e) => {
+  assignProductForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const studentId = document.getElementById('assignStudentId').value;
     const productVal = document.getElementById('assignProductSelect').value;
@@ -505,19 +512,28 @@ if (assignProductForm) {
     const [pName, pPrice] = productVal.split('|');
     const newItem = { productName: pName, price: Number(pPrice), date: new Date().toISOString() };
 
-    try {
-      await db.collection('students').doc(studentId).update({
-        storeItems: firebase.firestore.FieldValue.arrayUnion(newItem)
-      });
-      closeAssignModal();
-      loadStoreData();
-    } catch (error) {
-      alert('Failed to register product assignment.');
+    // 1. Instant Close Modal
+    closeAssignModal();
+
+    // 2. Instant Local Cache & UI Update (0ms)
+    const targetStudent = allStoreStudentsCache.find(s => s.id === studentId);
+    if (targetStudent) {
+      if (!targetStudent.storeItems) targetStudent.storeItems = [];
+      targetStudent.storeItems.push(newItem);
+      renderStoreStudentsTable(allStoreStudentsCache);
     }
+
+    // 3. Background Sync with Firestore
+    db.collection('students').doc(studentId).update({
+      storeItems: firebase.firestore.FieldValue.arrayUnion(newItem)
+    }).catch(err => {
+      console.error(err);
+      alert('Failed to sync changes.');
+    });
   });
 }
 
-// --- Modal Operations and Entity Mutations ---
+// --- Instant Modal Operations and Entity Mutations ---
 function openEditModal(student) {
   document.getElementById('editStudentId').value = student.id;
   document.getElementById('editName').value = student.name || '';
@@ -534,29 +550,51 @@ function closeEditModal() {
   document.getElementById('editStudentModal').style.display = 'none';
 }
 
+// 4. Instant Student Edit Update (Zero Delay)
 async function updateStudentDatabase() {
   const id = document.getElementById('editStudentId').value;
-  const newName = document.getElementById('editName').value;
+  const newName = document.getElementById('editName').value.trim();
   const newDate = document.getElementById('editDate').value;
-  const newEmail = document.getElementById('editEmail').value;
+  const newEmail = document.getElementById('editEmail').value.trim();
   const newPassword = document.getElementById('editPassword').value;
   const newTotalFee = Number(document.getElementById('editTotalFee').value);
   const newDiscount = Number(document.getElementById('editDiscount').value);
 
-  try {
-    await db.collection('students').doc(id).update({
-      name: newName,
-      admissionDate: newDate,
-      email: newEmail,
-      password: newPassword,
-      totalFee: newTotalFee,
-      discount: newDiscount
-    });
-    closeEditModal();
-    loadStudents();
-  } catch (error) {
-    alert("Unable to update student records.");
+  // 1. Instant Close Modal
+  closeEditModal();
+
+  // 2. Instant Local State Mutation (0ms delay)
+  const studentObj = allStudentsCache.find(s => s.id === id);
+  if (studentObj) {
+    studentObj.name = newName;
+    studentObj.admissionDate = newDate;
+    studentObj.email = newEmail;
+    studentObj.password = newPassword;
+    studentObj.totalFee = newTotalFee;
+    studentObj.discount = newDiscount;
+    
+    updateSummaryMetrics(allStudentsCache);
+    renderStudentsLedger(allStudentsCache);
   }
+
+  // Also update store cache name if present
+  const storeStudentObj = allStoreStudentsCache.find(s => s.id === id);
+  if (storeStudentObj) {
+    storeStudentObj.name = newName;
+  }
+
+  // 3. Background Sync with Database
+  db.collection('students').doc(id).update({
+    name: newName,
+    admissionDate: newDate,
+    email: newEmail,
+    password: newPassword,
+    totalFee: newTotalFee,
+    discount: newDiscount
+  }).catch(error => {
+    console.error(error);
+    alert("Background sync failed. Please check internet connection.");
+  });
 }
 
 // --- Search Filter Handlers ---
@@ -580,7 +618,7 @@ if (searchStoreInput) {
   });
 }
 
-// --- Examination Result Management ---
+// --- Instant Examination Result Management ---
 const resultModalDialog = document.getElementById('resultModal');
 function openResultEditor(student) {
   document.getElementById('resultStudentId').value = student.id;
@@ -605,30 +643,44 @@ if (closeResultModalBtn) {
 
 const resultForm = document.getElementById('resultForm');
 if (resultForm) {
-  resultForm.addEventListener('submit', async (e) => {
+  resultForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const id = document.getElementById('resultStudentId').value;
-    await db.collection('students').doc(id).update({
-      result: {
-        marks: document.getElementById('rMarks').value.trim(),
-        grade: document.getElementById('rGrade').value.trim().toUpperCase(),
-        status: document.getElementById('rStatus').value,
-        isPublished: true
-      }
-    });
+    const newResult = {
+      marks: document.getElementById('rMarks').value.trim(),
+      grade: document.getElementById('rGrade').value.trim().toUpperCase(),
+      status: document.getElementById('rStatus').value,
+      isPublished: true
+    };
+
     if (resultModalDialog) resultModalDialog.style.display = 'none';
-    loadStudents();
+
+    // Instant local update
+    const target = allStudentsCache.find(s => s.id === id);
+    if (target) {
+      target.result = newResult;
+      renderStudentsLedger(allStudentsCache);
+    }
+
+    // Background sync
+    db.collection('students').doc(id).update({ result: newResult });
   });
 }
 
 const btnRemoveResult = document.getElementById('btnRemoveResult');
 if (btnRemoveResult) {
-  btnRemoveResult.addEventListener('click', async () => {
+  btnRemoveResult.addEventListener('click', () => {
     const id = document.getElementById('resultStudentId').value;
     if (confirm('Unpublish and clear examination results?')) {
-      await db.collection('students').doc(id).update({ result: null });
       if (resultModalDialog) resultModalDialog.style.display = 'none';
-      loadStudents();
+
+      const target = allStudentsCache.find(s => s.id === id);
+      if (target) {
+        target.result = null;
+        renderStudentsLedger(allStudentsCache);
+      }
+
+      db.collection('students').doc(id).update({ result: null });
     }
   });
 }
