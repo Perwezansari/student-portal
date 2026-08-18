@@ -1,5 +1,5 @@
 // ============================================================
-// Admin Portal Logic (Stable & Error-Free)
+// Admin Portal Logic 
 // ============================================================
 
 const loginView = document.getElementById('loginView');
@@ -49,7 +49,7 @@ function resetAdminLoginForm() {
   }
 }
 
-// --- Auth State Observer (Fixed Logout & View Switching) ---
+// --- Auth State Observer ---
 auth.onAuthStateChanged(async (user) => {
   if (loginError) loginError.textContent = '';
   if (user) {
@@ -77,7 +77,6 @@ auth.onAuthStateChanged(async (user) => {
       resetAdminLoginForm();
     }
   } else {
-    // Jab user logout hoga, yeh block chalega aur turant login screen dikha dega
     if (dashboardView) dashboardView.style.display = 'none';
     if (storeDashboardView) storeDashboardView.style.display = 'none';
     if (loginView) loginView.style.display = 'flex';
@@ -101,6 +100,7 @@ loginForm.addEventListener('submit', async (e) => {
     await auth.signInWithEmailAndPassword(email, password);
   } catch (err) {
     if (loginError) loginError.textContent = formatAuthErrorMessage(err.code) || 'Authentication failed.';
+  } finally {
     if (btn) {
       btn.disabled = false;
       btn.textContent = 'Login to Admin Panel';
@@ -375,21 +375,31 @@ function renderStoreStudentsTable(students) {
 
   students.forEach((student, index) => {
     const items = student.storeItems || [];
-    const storePaid = Number(student.storePaid) || 0;
-
+    const existingStorePaid = Number(student.storePaid) || 0;
+    
     let storeTotalBill = 0;
-    let itemsText = items.map(i => `<span class="store-item-badge">${sanitizeOutput(i.productName)}</span>`).join('');
-    if (items.length === 0) itemsText = '<span class="muted table-text-muted">No items</span>';
-
     items.forEach(i => storeTotalBill += Number(i.price));
-    const storeDue = Math.max(0, storeTotalBill - storePaid);
+    const storeDue = Math.max(0, storeTotalBill - existingStorePaid);
+
+    // Render items with a remove (✕) button
+    let itemsText = '';
+    if (items.length > 0) {
+      itemsText = items.map((item, itemIdx) => `
+        <span class="store-item-badge" style="display:inline-flex; align-items:center; gap:4px; background:#EFE6DD; padding:2px 6px; border-radius:4px; font-size:11px; margin:2px;">
+          ${sanitizeOutput(item.productName)} (₹${item.price})
+          <button type="button" class="removeStoreItemBtn" data-student-id="${student.id}" data-item-index="${itemIdx}" style="background:none; border:none; color:#B22222; font-weight:bold; cursor:pointer; font-size:12px;" title="Remove Item">✕</button>
+        </span>
+      `).join('');
+    } else {
+      itemsText = '<span class="muted table-text-muted">No items</span>';
+    }
 
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td><strong>${index + 1}. ${sanitizeOutput(student.name)}</strong></td>
       <td>${itemsText}</td>
       <td class="text-bold">₹${storeTotalBill}</td>
-      <td class="success">₹${storePaid}</td>
+      <td class="success">₹${existingStorePaid}</td>
       <td class="${storeDue > 0 ? 'danger' : 'success'} text-bold">₹${storeDue}</td>
       <td>
         <input type="number" class="storePaidInput input-ledger-action" min="0" step="1" placeholder="₹ Paid">
@@ -398,11 +408,34 @@ function renderStoreStudentsTable(students) {
       </td>
     `;
 
+    // FIX: Accumulate/Add new payment to the existing storePaid instead of overwriting
     tr.querySelector('.storeUpdateBtn').addEventListener('click', async () => {
-      const val = tr.querySelector('.storePaidInput').value;
-      if (val === '') return;
-      await db.collection('students').doc(student.id).update({ storePaid: Number(val) });
-      loadStoreData();
+      const valInput = tr.querySelector('.storePaidInput').value;
+      if (valInput === '') return;
+      const newPayment = Number(valInput) || 0;
+      const updatedStorePaid = existingStorePaid + newPayment;
+
+      await db.collection('students').doc(student.id).update({ storePaid: updatedStorePaid });
+      loadStoreData(); 
+    });
+
+    // FIX: Remove specific item from storeItems array
+    tr.querySelectorAll('.removeStoreItemBtn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const sId = btn.getAttribute('data-student-id');
+        const idx = Number(btn.getAttribute('data-item-index'));
+        
+        if (confirm('Remove this product from student account?')) {
+          const targetStudent = allStoreStudentsCache.find(s => s.id === sId);
+          if (targetStudent && targetStudent.storeItems) {
+            const updatedItems = [...targetStudent.storeItems];
+            updatedItems.splice(idx, 1); // remove item at index
+            
+            await db.collection('students').doc(sId).update({ storeItems: updatedItems });
+            loadStoreData();
+          }
+        }
+      });
     });
 
     tr.querySelector('.assignBtn').addEventListener('click', () => {
