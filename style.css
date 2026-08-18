@@ -255,7 +255,8 @@ body {
 .topbar-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  flex-wrap: nowrap;
 }
 
 /* Dashboard Core Containers */
@@ -458,9 +459,9 @@ select:focus {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 10px 18px;
-  font-size: 13.5px;
+  gap: 4px;
+  padding: 8px 14px;
+  font-size: 13px;
   font-weight: 700;
   border-radius: var(--radius-sm);
   border: none;
@@ -528,8 +529,8 @@ select:focus {
 }
 
 .btn.small {
-  padding: 6px 12px;
-  font-size: 12px;
+  padding: 5px 10px;
+  font-size: 11.5px;
   border-radius: 6px;
 }
 
@@ -592,6 +593,26 @@ tr:hover td {
 
 .table-action-col {
   width: 100px;
+}
+
+/* Actions Column Layout Fix (Prevents vertical stack weirdness) */
+.actions-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+  min-width: 120px;
+}
+
+.action-row-group {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.actions-header {
+  white-space: nowrap;
 }
 
 /* Student Ledger Elements */
@@ -827,8 +848,8 @@ tr:hover td {
 }
 
 .input-ledger-action {
-  width: 75px;
-  padding: 6px 4px;
+  width: 70px;
+  padding: 5px 4px;
   font-size: 12px;
   border: 1px solid var(--card-border);
   border-radius: 4px;
@@ -899,11 +920,14 @@ tr:hover td {
   margin: 0;
 }
 
-/* Mobile Inputs and Password Toggle Wrapper */
+/* iPhone / Safari Date Input Rendering Fix */
 input[type="date"].date-fix {
   width: 100%;
   box-sizing: border-box;
   -webkit-appearance: none;
+  appearance: none;
+  background-color: var(--bg-surface-elevated);
+  min-height: 42px;
   margin: 0;
 }
 
@@ -967,10 +991,12 @@ input[type="text"]::-webkit-credentials-auto-fill-button {
 
 /* Responsive Viewports */
 @media (max-width: 650px) {
-  .topbar { padding: 10px 14px; }
+  .topbar { padding: 10px 12px; }
   .card { padding: 18px 14px; }
   .auth-card { padding: 30px 20px 20px; max-width: 345px; }
   .grid-form { grid-template-columns: 1fr; }
   .result-grid-display { grid-template-columns: 1fr; gap: 10px; }
   .info-row { padding: 10px 12px; font-size: 12.5px; }
+  .topbar-brand h2 { font-size: 15px; }
+  .muted-tag { font-size: 9.5px; }
 }
