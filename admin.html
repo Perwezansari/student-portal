@@ -17,7 +17,7 @@
   </div>
   <form id="loginForm" class="auth-card">
     <div class="brand-header">
-      <img src="logo.png" alt="Logo" class="brand-logo" onerror="this.classList.add('view-state-hidden')">
+      <img src="logo.png" alt="Logo" class="brand-logo" onerror="this.style.display='none'">
       <h1 class="brand-title">Shama</h1>
       <span class="brand-subtitle">HENNA CLASSES</span>
     </div>
@@ -36,18 +36,18 @@
 </div>
 
 <!-- Main Administrator Dashboard -->
-<div id="dashboardView" class="view-state-hidden">
+<div id="dashboardView" style="display:none;">
   <header class="topbar">
     <div class="topbar-brand">
-      <img src="logo.png" alt="Logo" class="topbar-logo" onerror="this.classList.add('view-state-hidden')">
+      <img src="logo.png" alt="Logo" class="topbar-logo" onerror="this.style.display='none'">
       <div>
         <h2>Shama Henna Classes</h2>
         <span class="muted-tag">Instructor Dashboard</span>
       </div>
     </div>
+    <!-- "View Student Portal" hata diya gaya hai, ab sirf Store aur Logout rahenge -->
     <div class="topbar-actions">
       <button id="navToStoreBtn" class="btn primary small btn-store-nav">🛒 Store Dashboard</button>
-      <a href="index.html" class="btn ghost small">View Student Portal</a>
       <button id="logoutBtn" class="btn ghost small">Logout</button>
     </div>
   </header>
@@ -97,7 +97,7 @@
       <div class="search-box">
         <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search student by name or email ID...">
       </div>
-      <p id="permissionError" class="error view-state-hidden">Access restricted. Administrator credentials required.</p>
+      <p id="permissionError" class="error" style="display:none;">Access restricted. Administrator credentials required.</p>
       <div class="table-wrap">
         <table>
           <thead>
@@ -109,7 +109,7 @@
               <th>Paid Fee</th>
               <th>Due Balance</th>
               <th>Result</th>
-              <th>Actions</th>
+              <th class="actions-header">Actions</th>
             </tr>
           </thead>
           <tbody id="studentsBody">
@@ -122,7 +122,7 @@
 </div>
 
 <!-- Store Management Interface -->
-<div id="storeDashboardView" class="store-dashboard-container view-state-hidden">
+<div id="storeDashboardView" class="store-dashboard-container" style="display:none;">
   <header class="topbar topbar-store">
     <div class="topbar-brand">
       <div>
@@ -190,7 +190,7 @@
 </div>
 
 <!-- Dialog Modals -->
-<div id="assignProductModal" class="modal-overlay view-state-hidden">
+<div id="assignProductModal" class="modal-overlay" style="display:none;">
   <div class="modal-content">
     <div class="card-head modal-head">
       <h3>🛍️ Assign Product to Student</h3>
@@ -206,7 +206,7 @@
   </div>
 </div>
 
-<div id="resultModal" class="modal-overlay view-state-hidden">
+<div id="resultModal" class="modal-overlay" style="display:none;">
   <div class="modal-content">
     <div class="card-head modal-head">
       <h3>📝 Update Exam Result</h3>
@@ -231,7 +231,7 @@
   </div>
 </div>
 
-<div id="editStudentModal" class="modal-overlay view-state-hidden">
+<div id="editStudentModal" class="modal-overlay" style="display:none;">
   <div class="modal-content modal-content-lg">
     <div class="card-head modal-head">
       <h3>✏️ Edit Student Details</h3>
