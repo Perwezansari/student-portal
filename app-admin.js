@@ -1,5 +1,5 @@
 // ============================================================
-// Admin Portal Logic 
+// Admin Portal Logic (Stable & Error-Free)
 // ============================================================
 
 const loginView = document.getElementById('loginView');
@@ -39,32 +39,49 @@ if (navToMainBtn) {
   });
 }
 
-// --- Auth State Observer ---
+// --- Helper to Reset Admin Login Form State ---
+function resetAdminLoginForm() {
+  if (loginForm) loginForm.reset();
+  const submitBtn = loginForm ? loginForm.querySelector('button[type="submit"]') : null;
+  if (submitBtn) {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Login to Admin Panel';
+  }
+}
+
+// --- Auth State Observer (Fixed Logout & View Switching) ---
 auth.onAuthStateChanged(async (user) => {
   if (loginError) loginError.textContent = '';
   if (user) {
     try {
       const adminDoc = await db.collection('admins').doc(user.uid).get();
       if (adminDoc.exists) {
+        if (storeDashboardView) storeDashboardView.style.display = 'none';
         if (loginView) loginView.style.display = 'none';
         if (dashboardView) dashboardView.style.display = 'block';
         loadStudents();
       } else {
         await auth.signOut();
         if (loginError) loginError.textContent = 'Access Denied: Administrative privileges required.';
-        if (loginView) loginView.style.display = 'flex';
         if (dashboardView) dashboardView.style.display = 'none';
+        if (storeDashboardView) storeDashboardView.style.display = 'none';
+        if (loginView) loginView.style.display = 'flex';
+        resetAdminLoginForm();
       }
     } catch (err) {
       console.error(err);
       await auth.signOut();
-      if (loginView) loginView.style.display = 'flex';
       if (dashboardView) dashboardView.style.display = 'none';
+      if (storeDashboardView) storeDashboardView.style.display = 'none';
+      if (loginView) loginView.style.display = 'flex';
+      resetAdminLoginForm();
     }
   } else {
-    if (loginView) loginView.style.display = 'flex';
+    // Jab user logout hoga, yeh block chalega aur turant login screen dikha dega
     if (dashboardView) dashboardView.style.display = 'none';
     if (storeDashboardView) storeDashboardView.style.display = 'none';
+    if (loginView) loginView.style.display = 'flex';
+    resetAdminLoginForm();
   }
 });
 
@@ -93,6 +110,7 @@ loginForm.addEventListener('submit', async (e) => {
 
 if (logoutBtn) {
   logoutBtn.addEventListener('click', async () => {
+    resetAdminLoginForm();
     await auth.signOut();
   });
 }
