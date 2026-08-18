@@ -1,8 +1,4 @@
-/* ============================================================
-   Shama Henna Classes — Luxury Ivory & Maroon Design System
-   Matches clean warm-cream background from reference
-   ============================================================ */
-
+/* Design System Variables */
 :root {
   --primary: #78202B;
   --primary-dark: #450B12;
@@ -52,10 +48,7 @@ body {
   flex-direction: column;
 }
 
-/* ============================================================
-   1. CLEAN ROYAL CREAM LOGIN SCREEN
-   ============================================================ */
-
+/* Authentication Interface */
 .auth-wrap {
   display: flex;
   align-items: center;
@@ -96,7 +89,6 @@ body {
   box-shadow: 0 6px 18px rgba(196, 154, 69, 0.25);
 }
 
-/* White Solid Floating Card */
 .auth-card {
   position: relative;
   z-index: 5;
@@ -106,9 +98,7 @@ body {
   border-radius: var(--radius-lg);
   padding: 36px 28px 24px;
   border: 1px solid var(--card-border);
-  box-shadow: 
-    0 20px 45px rgba(120, 32, 43, 0.08),
-    0 1px 3px rgba(0, 0, 0, 0.02);
+  box-shadow: 0 20px 45px rgba(120, 32, 43, 0.08), 0 1px 3px rgba(0, 0, 0, 0.02);
   animation: cardEntrance 0.4s ease-out;
 }
 
@@ -152,10 +142,6 @@ body {
   text-transform: uppercase;
   text-align: center;
   margin-top: 5px;
-}
-
-.divider {
-  display: none; /* Clean spacing without divider */
 }
 
 .auth-card h2 {
@@ -205,35 +191,21 @@ body {
   box-shadow: 0 0 0 4px var(--gold-subtle);
 }
 
-/* Velvet Maroon Action Button */
-.btn.primary.full {
-  width: 100%;
-  padding: 13.5px;
-  font-size: 15px;
-  font-weight: 700;
-  color: #ffffff;
-  background: linear-gradient(135deg, var(--primary) 0%, #58161f 100%);
-  border: none;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  box-shadow: 0 6px 18px rgba(120, 32, 43, 0.3);
-  transition: var(--transition);
-  margin-top: 4px;
+.auth-footer {
+  text-align: center;
+  margin-top: 18px;
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  border-top: 1px dashed var(--card-border);
+  padding-top: 12px;
 }
 
-.btn.primary.full:hover {
-  transform: translateY(-1.5px);
-  box-shadow: 0 8px 24px rgba(120, 32, 43, 0.4);
+.auth-footer-highlight {
+  color: var(--primary);
 }
 
-.btn.primary.full:active {
-  transform: translateY(0);
-}
-
-/* ============================================================
-   2. TOPBAR & DASHBOARD NAVIGATION
-   ============================================================ */
-
+/* Header and Navigation Bar */
 .topbar {
   background: var(--bg-surface);
   border-bottom: 1px solid var(--card-border);
@@ -245,6 +217,10 @@ body {
   position: sticky;
   top: 0;
   z-index: 100;
+}
+
+.topbar-store {
+  background: #FFFFFF;
 }
 
 .topbar-brand {
@@ -282,10 +258,7 @@ body {
   gap: 10px;
 }
 
-/* ============================================================
-   3. DASHBOARD MAIN CONTAINER & CARDS
-   ============================================================ */
-
+/* Dashboard Core Containers */
 .container {
   width: 100%;
   max-width: 1080px;
@@ -310,6 +283,10 @@ body {
   margin-bottom: 4px;
 }
 
+.welcome-description {
+  margin: 0;
+}
+
 .card {
   background: var(--bg-surface);
   border-radius: var(--radius-md);
@@ -322,6 +299,10 @@ body {
 
 .card:hover {
   box-shadow: var(--shadow-lg);
+}
+
+.card-store-header {
+  border-top: 4px solid var(--gold);
 }
 
 .card-head {
@@ -355,10 +336,7 @@ body {
   letter-spacing: 0.5px;
 }
 
-/* ============================================================
-   4. SUMMARY STAT CARDS (Admin)
-   ============================================================ */
-
+/* Metric and Statistics Cards */
 .summary-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
@@ -405,10 +383,7 @@ body {
   margin-top: 6px;
 }
 
-/* ============================================================
-   5. FORMS & INPUTS (Registration & Modal)
-   ============================================================ */
-
+/* Form Controls and Field Inputs */
 .grid-form {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -433,6 +408,7 @@ input[type="text"],
 input[type="email"],
 input[type="password"],
 input[type="number"],
+input[type="tel"],
 input[type="date"],
 select {
   width: 100%;
@@ -460,10 +436,24 @@ select:focus {
   padding: 13px;
 }
 
-/* ============================================================
-   6. BUTTONS
-   ============================================================ */
+.store-product-form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
 
+.form-input-primary-flex {
+  flex: 2;
+  padding: 10px;
+}
+
+.form-input-secondary-flex {
+  flex: 1;
+  padding: 10px;
+}
+
+/* Button Components */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -488,6 +478,20 @@ select:focus {
 .btn.primary:hover {
   transform: translateY(-1.5px);
   box-shadow: 0 6px 20px rgba(120, 32, 43, 0.35);
+}
+
+.btn.primary.full {
+  width: 100%;
+  padding: 13.5px;
+  font-size: 15px;
+  background: linear-gradient(135deg, var(--primary) 0%, #58161f 100%);
+  box-shadow: 0 6px 18px rgba(120, 32, 43, 0.3);
+  margin-top: 4px;
+}
+
+.btn.primary.full:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 0 8px 24px rgba(120, 32, 43, 0.4);
 }
 
 .btn.secondary-btn {
@@ -535,10 +539,13 @@ select:focus {
   transform: none;
 }
 
-/* ============================================================
-   7. TABLE DIRECTORY & SEARCH
-   ============================================================ */
+.btn-store-nav {
+  background: var(--gold);
+  border: none;
+  box-shadow: none;
+}
 
+/* Data Tables and Query Filters */
 .search-box {
   margin-bottom: 16px;
 }
@@ -583,10 +590,11 @@ tr:hover td {
   background-color: #FAF8F5;
 }
 
-/* ============================================================
-   8. STUDENT LEDGER ROWS (Info Rows in index.html)
-   ============================================================ */
+.table-action-col {
+  width: 100px;
+}
 
+/* Student Ledger Elements */
 .info-row {
   display: flex;
   justify-content: space-between;
@@ -616,7 +624,14 @@ tr:hover td {
   color: var(--primary);
 }
 
-/* Result Box in Student Portal */
+.card-action-footer {
+  margin-top: 20px;
+  border-top: 1px solid var(--card-border);
+  padding-top: 16px;
+  text-align: right;
+}
+
+/* Exam Performance Grid */
 .result-card-box {
   background: linear-gradient(145deg, #FAF6EE 0%, #FFFFFF 100%);
   border: 1.5px solid rgba(196, 154, 69, 0.35);
@@ -645,13 +660,17 @@ tr:hover td {
   color: var(--primary);
 }
 
-/* ============================================================
-   9. STATUS BADGES & ERROR MESSAGES
-   ============================================================ */
+.result-stat-grade {
+  color: var(--gold);
+}
 
+/* Dynamic State Markers and Status Badges */
 .success { color: var(--success); }
 .danger { color: var(--danger); }
 .muted { color: var(--text-muted); }
+.gold-text { color: var(--gold); }
+.text-bold { font-weight: 700; }
+.text-gold-bold { color: var(--gold); font-weight: 600; }
 
 .error {
   color: var(--danger);
@@ -709,10 +728,7 @@ tr:hover td {
   color: var(--danger);
 }
 
-/* ============================================================
-   10. MODAL: UPDATE RESULT
-   ============================================================ */
-
+/* Modal Dialog System */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -736,10 +752,220 @@ tr:hover td {
   border: 1.5px solid rgba(196, 154, 69, 0.35);
 }
 
-/* ============================================================
-   11. RESPONSIVE MEDIA QUERIES
-   ============================================================ */
+.modal-content-lg {
+  max-width: 450px;
+}
 
+.modal-head {
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+}
+
+.modal-head h3 {
+  color: var(--primary);
+  margin: 0;
+}
+
+.modal-subtitle {
+  font-weight: 600;
+  color: var(--gold);
+  margin-bottom: 12px;
+  display: block;
+}
+
+.modal-field {
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 8px;
+}
+
+.modal-field-bottom {
+  width: 100%;
+  margin-bottom: 20px;
+  padding: 8px;
+}
+
+.modal-select {
+  width: 100%;
+  margin-bottom: 16px;
+  padding: 10px;
+  border: 1.5px solid var(--card-border);
+  border-radius: var(--radius-sm);
+  outline: none;
+}
+
+.modal-footer-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.modal-footer-actions-compact {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.btn-flex-fill {
+  flex: 1;
+}
+
+/* Dynamic Table Rendered Content */
+.table-sub-email {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.table-sub-pass {
+  font-size: 11px;
+  color: #d9534f;
+  font-weight: bold;
+}
+
+.table-text-muted {
+  font-size: 12px;
+}
+
+.input-ledger-action {
+  width: 75px;
+  padding: 6px 4px;
+  font-size: 12px;
+  border: 1px solid var(--card-border);
+  border-radius: 4px;
+  outline: none;
+}
+
+.input-ledger-action:focus {
+  border-color: var(--gold);
+}
+
+.store-item-badge {
+  display: inline-block;
+  background: #EFE6DD;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  margin: 2px;
+  color: var(--text-main);
+}
+
+.student-store-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px 0;
+}
+
+.student-store-list-item {
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--card-border);
+  display: flex;
+  justify-content: space-between;
+  font-size: 13.5px;
+}
+
+.student-store-summary-box {
+  background: var(--bg-surface-elevated);
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 13.5px;
+}
+
+.student-store-summary-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.student-store-summary-row-final {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid var(--card-border);
+  padding-top: 6px;
+}
+
+.empty-state-text {
+  text-align: center;
+  padding: 10px;
+}
+
+.pending-state-box {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 24px;
+}
+
+.pending-state-title {
+  font-size: 15px;
+  margin: 0;
+}
+
+/* Mobile Inputs and Password Toggle Wrapper */
+input[type="date"].date-fix {
+  width: 100%;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.password-wrapper input {
+  margin-bottom: 0 !important;
+  padding-right: 40px;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 12px;
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+input::-ms-reveal,
+input::-ms-clear {
+  display: none !important;
+}
+
+input[type="password"]::-webkit-credentials-auto-fill-button,
+input[type="text"]::-webkit-credentials-auto-fill-button {
+  visibility: hidden;
+  position: absolute;
+  right: 0;
+}
+
+/* View State Management */
+.view-state-hidden {
+  display: none !important;
+}
+
+.store-dashboard-container {
+  background: #FAF8F5;
+  min-height: 100vh;
+}
+
+/* Base Utility Classes */
+.btn-gold { background: var(--gold) !important; border: none !important; box-shadow: none !important; }
+.topbar-white { background: #FFFFFF !important; }
+.card-gold-top { border-top: 4px solid var(--gold); }
+.flex-form { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+.flex-2 { flex: 2; padding: 10px; }
+.flex-1 { flex: 1; padding: 10px; }
+.w-100 { width: 100%; }
+.w-100px { width: 100px; }
+.primary-text { color: var(--primary); margin: 0; }
+
+/* Responsive Viewports */
 @media (max-width: 650px) {
   .topbar { padding: 10px 14px; }
   .card { padding: 18px 14px; }
