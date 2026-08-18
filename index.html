@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Mobile Viewport Fix (Zoom problem ke liye) -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Shama Henna Classes — Student Portal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -19,7 +20,7 @@
 
   <form id="loginForm" class="auth-card">
     <div class="brand-header">
-      <img src="logo.png" alt="Shama Henna Classes Logo" class="brand-logo" onerror="this.classList.add('view-state-hidden')">
+      <img src="logo.png" alt="Shama Henna Classes Logo" class="brand-logo" onerror="this.style.display='none'">
       <h1 class="brand-title">Shama</h1>
       <span class="brand-subtitle">HENNA CLASSES</span>
     </div>
@@ -45,11 +46,11 @@
   </form>
 </div>
 
-<!-- Student Dashboard Container -->
-<div id="dashboardView" class="view-state-hidden">
+<!-- Student Dashboard Container (Fix: view-state-hidden hata diya gaya hai) -->
+<div id="dashboardView" style="display:none;">
   <header class="topbar">
     <div class="topbar-brand">
-      <img src="logo.png" alt="Logo" class="topbar-logo" onerror="this.classList.add('view-state-hidden')">
+      <img src="logo.png" alt="Logo" class="topbar-logo" onerror="this.style.display='none'">
       <div>
         <h2>Shama Henna Classes</h2>
         <span class="muted-tag">Student Portal</span>
