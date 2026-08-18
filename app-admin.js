@@ -260,8 +260,8 @@ function renderStudentsLedger(students) {
       <td>
         <div class="actions-cell">
           <div class="action-row-group">
-            <input type="number" class="paidInput input-ledger-action" min="0" step="1" placeholder="₹ Paid">
-            <button class="btn small primary updateBtn" type="button" title="Save Payment">Save</button>
+            <input type="number" class="paidInput input-ledger-action" min="0" step="1" placeholder="+ Add ₹">
+            <button class="btn small primary updateBtn" type="button" title="Save Payment">Add</button>
           </div>
           <div class="action-row-group">
             <button class="btn small ghost editBtn" type="button" title="Edit Record">✏️ Edit</button>
@@ -273,9 +273,11 @@ function renderStudentsLedger(students) {
     `;
 
     tr.querySelector('.updateBtn').addEventListener('click', async () => {
-      const val = tr.querySelector('.paidInput').value;
-      if (val === '') return;
-      await db.collection('students').doc(d.id).update({ paidFee: Number(val) });
+      const valInput = tr.querySelector('.paidInput').value;
+      if (valInput === '') return;
+      const newPayment = Number(valInput) || 0;
+      const updatedTotalPaid = paid + newPayment; 
+      await db.collection('students').doc(d.id).update({ paidFee: updatedTotalPaid });
       loadStudents();
     });
 
@@ -381,7 +383,6 @@ function renderStoreStudentsTable(students) {
     items.forEach(i => storeTotalBill += Number(i.price));
     const storeDue = Math.max(0, storeTotalBill - existingStorePaid);
 
-    // Render items with a remove (✕) button
     let itemsText = '';
     if (items.length > 0) {
       itemsText = items.map((item, itemIdx) => `
@@ -399,16 +400,19 @@ function renderStoreStudentsTable(students) {
       <td><strong>${index + 1}. ${sanitizeOutput(student.name)}</strong></td>
       <td>${itemsText}</td>
       <td class="text-bold">₹${storeTotalBill}</td>
-      <td class="success">₹${existingStorePaid}</td>
+      <td class="success">
+        ₹${existingStorePaid}
+        ${existingStorePaid > 0 ? `<div style="margin-top:4px;"><button class="resetStorePaidBtn" style="background:none; border:none; color:var(--danger); font-size:10px; font-weight:bold; cursor:pointer; padding:0;" title="Reset Paid to Zero">↺ Reset 0</button></div>` : ''}
+      </td>
       <td class="${storeDue > 0 ? 'danger' : 'success'} text-bold">₹${storeDue}</td>
       <td>
-        <input type="number" class="storePaidInput input-ledger-action" min="0" step="1" placeholder="₹ Paid">
-        <button class="btn small primary storeUpdateBtn" title="Update Payment">Save</button>
+        <input type="number" class="storePaidInput input-ledger-action" min="0" step="1" placeholder="+ Add ₹">
+        <button class="btn small primary storeUpdateBtn" title="Add Payment">Add</button>
         <button class="btn small ghost assignBtn" title="Assign Item">🛍️ Assign</button>
       </td>
     `;
 
-    // FIX: Accumulate/Add new payment to the existing storePaid instead of overwriting
+    // 1. Payment Accumulation (Plus karna)
     tr.querySelector('.storeUpdateBtn').addEventListener('click', async () => {
       const valInput = tr.querySelector('.storePaidInput').value;
       if (valInput === '') return;
@@ -419,7 +423,18 @@ function renderStoreStudentsTable(students) {
       loadStoreData(); 
     });
 
-    // FIX: Remove specific item from storeItems array
+    // 2. Manual Reset Paid Amount Feature
+    const resetBtn = tr.querySelector('.resetStorePaidBtn');
+    if (resetBtn) {
+      resetBtn.addEventListener('click', async () => {
+        if (confirm('Kya aap is student ka paid amount zero (0) karna chahte hain?')) {
+          await db.collection('students').doc(student.id).update({ storePaid: 0 });
+          loadStoreData();
+        }
+      });
+    }
+
+    // 3. Remove Specific Product Feature (AND AUTO-RESET)
     tr.querySelectorAll('.removeStoreItemBtn').forEach(btn => {
       btn.addEventListener('click', async () => {
         const sId = btn.getAttribute('data-student-id');
@@ -429,9 +444,18 @@ function renderStoreStudentsTable(students) {
           const targetStudent = allStoreStudentsCache.find(s => s.id === sId);
           if (targetStudent && targetStudent.storeItems) {
             const updatedItems = [...targetStudent.storeItems];
-            updatedItems.splice(idx, 1); // remove item at index
+            updatedItems.splice(idx, 1);
             
-            await db.collection('students').doc(sId).update({ storeItems: updatedItems });
+            // AUTOMATIC RESET LOGIC: Agar saare items delete ho gaye hain, toh paid amount ko bhi 0 kardo
+            let updatedPaid = existingStorePaid;
+            if (updatedItems.length === 0) {
+              updatedPaid = 0; // Sab shuru jaisa ho gaya
+            }
+            
+            await db.collection('students').doc(sId).update({ 
+              storeItems: updatedItems,
+              storePaid: updatedPaid 
+            });
             loadStoreData();
           }
         }
