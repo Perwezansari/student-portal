@@ -1,83 +1,70 @@
-// ============================================================
-// Admin Portal Logic (Instant Login + Verifying State + Direct Reset)
-// ============================================================
-
+// Data Layer and Application View Controllers
 const loginView = document.getElementById('loginView');
 const dashboardView = document.getElementById('dashboardView');
+const storeDashboardView = document.getElementById('storeDashboardView');
 const loginForm = document.getElementById('loginForm');
 const loginError = document.getElementById('loginError');
 const logoutBtn = document.getElementById('logoutBtn');
 const addForm = document.getElementById('addStudentForm');
 const addStatus = document.getElementById('addStatus');
 const studentsBody = document.getElementById('studentsBody');
-const permissionError = document.getElementById('permissionError');
 const searchInput = document.getElementById('searchInput');
-
-// Result Modal elements
-const resultModal = document.getElementById('resultModal');
-const closeResultModal = document.getElementById('closeResultModal');
-const resultForm = document.getElementById('resultForm');
-const resultStudentId = document.getElementById('resultStudentId');
-const resultModalStudentName = document.getElementById('resultModalStudentName');
-const rMarks = document.getElementById('rMarks');
-const rGrade = document.getElementById('rGrade');
-const rStatus = document.getElementById('rStatus');
-const btnRemoveResult = document.getElementById('btnRemoveResult');
+const searchStoreInput = document.getElementById('searchStoreInput');
 
 let allStudentsCache = [];
+let allProductsCache = [];
+let allStoreStudentsCache = [];
 
-// Background Persistence
 auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(() => {});
 
-// Helper function: Button ko har haal me "Login to Dashboard" par reset karega
-function resetAdminLoginForm() {
-  loginForm.reset();
-  const btn = loginForm.querySelector('button');
-  if (btn) {
-    btn.disabled = false;
-    btn.textContent = 'Login to Dashboard';
-  }
-}
+// Navigation View Routing
+document.getElementById('navToStoreBtn').addEventListener('click', () => {
+  dashboardView.classList.add('view-state-hidden');
+  storeDashboardView.classList.remove('view-state-hidden');
+  loadStoreData();
+});
 
-// --- Auth State Verification ---
+document.getElementById('navToMainBtn').addEventListener('click', () => {
+  storeDashboardView.classList.add('view-state-hidden');
+  dashboardView.classList.remove('view-state-hidden');
+  loadStudents();
+});
+
+// Authentication Observer
 auth.onAuthStateChanged(async (user) => {
   loginError.textContent = '';
   if (user) {
     try {
       const adminDoc = await db.collection('admins').doc(user.uid).get();
       if (adminDoc.exists) {
-        loginView.style.display = 'none';
-        dashboardView.style.display = 'block';
+        loginView.classList.add('view-state-hidden');
+        dashboardView.classList.remove('view-state-hidden');
         loadStudents();
       } else {
         await auth.signOut();
-        loginError.textContent = 'Access Denied: Sirf Admin account se login kar sakte hain.';
-        alert('Access Denied: Student account se admin dashboard open nahi kiya ja sakta!');
-        loginView.style.display = 'flex';
-        dashboardView.style.display = 'none';
-        resetAdminLoginForm();
+        loginError.textContent = 'Access Denied: Administrative privileges required.';
+        loginView.classList.remove('view-state-hidden');
+        dashboardView.classList.add('view-state-hidden');
       }
     } catch (err) {
       await auth.signOut();
-      loginError.textContent = 'Verification error. Dobara try karein.';
-      loginView.style.display = 'flex';
-      dashboardView.style.display = 'none';
-      resetAdminLoginForm();
+      loginView.classList.remove('view-state-hidden');
+      dashboardView.classList.add('view-state-hidden');
     }
   } else {
-    loginView.style.display = 'flex';
-    dashboardView.style.display = 'none';
-    resetAdminLoginForm();
+    loginView.classList.remove('view-state-hidden');
+    dashboardView.classList.add('view-state-hidden');
+    storeDashboardView.classList.add('view-state-hidden');
   }
 });
 
-// --- Login Handler ---
+// Login Handler
 loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   loginError.textContent = '';
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
-  const btn = loginForm.querySelector('button');
+  const btn = loginForm.querySelector('button[type="submit"]');
 
   btn.disabled = true;
   btn.textContent = 'Verifying...';
@@ -85,25 +72,23 @@ loginForm.addEventListener('submit', async (e) => {
   try {
     await auth.signInWithEmailAndPassword(email, password);
   } catch (err) {
-    loginError.textContent = friendlyError(err.code) || 'Login nahi ho paya.';
+    loginError.textContent = formatAuthErrorMessage(err.code) || 'Authentication failed.';
   } finally {
-    // Ye block HAR HAAL ME chalega taaki logout ke baad ya error aane par "Login to Dashboard" wapas aa jaye
     btn.disabled = false;
-    btn.textContent = 'Login to Dashboard';
+    btn.textContent = 'Login to Admin Panel';
   }
 });
 
 logoutBtn.addEventListener('click', async () => {
-  resetAdminLoginForm();
   await auth.signOut();
 });
 
-// --- Add Student Logic ---
+// Registration Controller
 addForm.addEventListener('submit', async (e) => {
   e.preventDefault();
-  const submitBtn = addForm.querySelector('button');
+  const submitBtn = addForm.querySelector('button[type="submit"]');
   submitBtn.disabled = true;
-  addStatus.textContent = 'Adding...';
+  addStatus.textContent = 'Processing registration...';
   addStatus.className = 'status';
 
   const name = document.getElementById('sName').value.trim();
@@ -116,9 +101,9 @@ addForm.addEventListener('submit', async (e) => {
 
   let secondaryApp;
   try {
-    secondaryApp = firebase.initializeApp(firebaseConfig, 'Secondary-' + Date.now());
-    const cred = await secondaryApp.auth().createUserWithEmailAndPassword(email, password);
-    const uid = cred.user.uid;
+    secondaryApp = firebase.initializeApp(firebaseConfig, 'SecondaryAuthInstance-' + Date.now());
+    const credentials = await secondaryApp.auth().createUserWithEmailAndPassword(email, password);
+    const uid = credentials.user.uid;
     await secondaryApp.auth().signOut();
     await secondaryApp.delete();
     secondaryApp = null;
@@ -130,44 +115,46 @@ addForm.addEventListener('submit', async (e) => {
       discount,
       paidFee,
       email,
-      result: null
+      password,
+      result: null,
+      storeItems: [],
+      storePaid: 0
     });
 
-    addStatus.textContent = `"${name}" enroll ho gaya! Login ID: ${email}`;
+    addStatus.textContent = `Student ${name} successfully enrolled.`;
     addStatus.className = 'status success';
     addForm.reset();
     document.getElementById('sDiscount').value = 0;
     document.getElementById('sPaid').value = 0;
     loadStudents();
   } catch (err) {
-    addStatus.textContent = friendlyError(err.code) || 'Kuch galat hua, dobara try karein.';
+    addStatus.textContent = formatAuthErrorMessage(err.code) || 'Unable to register student.';
     addStatus.className = 'status danger';
   } finally {
-    if (secondaryApp) { try { await secondaryApp.delete(); } catch (_) {} }
+    if (secondaryApp) {
+      try { await secondaryApp.delete(); } catch (_) {}
+    }
     submitBtn.disabled = false;
   }
 });
 
-// --- Fetch & Render Students ---
+// Student Ledger Loading and Summarization
 async function loadStudents() {
-  permissionError.style.display = 'none';
-  studentsBody.innerHTML = '<tr><td colspan="8" class="muted">Loading ledger...</td></tr>';
+  studentsBody.innerHTML = '<tr><td colspan="8" class="muted">Loading records...</td></tr>';
   try {
-    const snap = await db.collection('students').orderBy('name').get();
+    const snapshot = await db.collection('students').orderBy('name').get();
     allStudentsCache = [];
-    snap.forEach((doc) => {
+    snapshot.forEach((doc) => {
       allStudentsCache.push({ id: doc.id, ...doc.data() });
     });
-
-    updateSummaryCards(allStudentsCache);
-    renderTable(allStudentsCache);
+    updateSummaryMetrics(allStudentsCache);
+    renderStudentsLedger(allStudentsCache);
   } catch (err) {
-    studentsBody.innerHTML = '';
-    permissionError.style.display = 'block';
+    studentsBody.innerHTML = `<tr><td colspan="8" class="danger text-bold">Error loading records: ${err.message}</td></tr>`;
   }
 }
 
-function updateSummaryCards(students) {
+function updateSummaryMetrics(students) {
   let totalStudents = students.length;
   let totalPaid = 0;
   let totalDue = 0;
@@ -179,7 +166,6 @@ function updateSummaryCards(students) {
     const paid = Number(s.paidFee) || 0;
     const net = Math.max(0, total - disc);
     const due = Math.max(0, net - paid);
-
     totalPaid += paid;
     totalDue += due;
     totalDiscount += disc;
@@ -191,41 +177,42 @@ function updateSummaryCards(students) {
   document.getElementById('statDiscount').textContent = '₹' + totalDiscount.toLocaleString('en-IN');
 }
 
-function renderTable(students) {
+function renderStudentsLedger(students) {
   if (students.length === 0) {
-    studentsBody.innerHTML = '<tr><td colspan="8" class="muted">Koi record nahi mila.</td></tr>';
+    studentsBody.innerHTML = '<tr><td colspan="8" class="muted">No records available.</td></tr>';
     return;
   }
-
   studentsBody.innerHTML = '';
-  students.forEach((d) => {
+
+  students.forEach((d, index) => {
     const total = Number(d.totalFee) || 0;
     const discount = Number(d.discount) || 0;
     const paid = Number(d.paidFee) || 0;
     const net = Math.max(0, total - discount);
     const due = Math.max(0, net - paid);
+    const serialNumber = index + 1;
 
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>
-        <strong>${escapeHtml(d.name || '-')}</strong>
-        <div style="font-size:11px; color:var(--muted);">${escapeHtml(d.email || '')}</div>
+        <strong>${serialNumber}. ${sanitizeOutput(d.name || '-')}</strong>
+        <div class="table-sub-email">${sanitizeOutput(d.email || '')}</div>
+        <div class="table-sub-pass">Pass: ${sanitizeOutput(d.password || 'N/A')}</div>
       </td>
       <td>${d.admissionDate || '-'}</td>
       <td>₹${total.toLocaleString('en-IN')}</td>
-      <td style="color:var(--gold); font-weight:600;">₹${discount.toLocaleString('en-IN')}</td>
+      <td class="text-gold-bold">₹${discount.toLocaleString('en-IN')}</td>
       <td class="success">₹${paid.toLocaleString('en-IN')}</td>
-      <td class="${due > 0 ? 'danger' : 'success'}" style="font-weight:700;">₹${due.toLocaleString('en-IN')}</td>
+      <td class="${due > 0 ? 'danger' : 'success'} text-bold">₹${due.toLocaleString('en-IN')}</td>
       <td>
-        ${d.result && d.result.isPublished ? 
-          `<span class="stamp ${d.result.status === 'PASS' ? 'success' : 'danger'}">${d.result.marks} (${d.result.grade})</span>` : 
-          `<span class="muted" style="font-size:12px;">Not Set</span>`}
+        ${d.result && d.result.isPublished ? `<span class="stamp ${d.result.status === 'PASS' ? 'success' : 'danger'}">${d.result.marks}</span>` : `<span class="muted table-text-muted">Not Set</span>`}
       </td>
-      <td class="actions">
-        <input type="number" class="paidInput" min="0" step="1" placeholder="₹ Paid" style="width:85px; padding:6px 8px; font-size:12px;">
-        <button class="btn small primary updateBtn" type="button">Save</button>
-        <button class="btn small ghost resultBtn" type="button">📝 Result</button>
-        <button class="btn small danger removeBtn" type="button">✕</button>
+      <td>
+        <input type="number" class="paidInput input-ledger-action" min="0" step="1" placeholder="₹ Paid">
+        <button class="btn small primary updateBtn" type="button" title="Save Payment">Save</button>
+        <button class="btn small ghost editBtn" type="button" title="Edit Record">✏️</button>
+        <button class="btn small ghost resultBtn" type="button" title="Record Result">📝</button>
+        <button class="btn small danger removeBtn" type="button" title="Delete Record">✕</button>
       </td>
     `;
 
@@ -236,91 +223,294 @@ function renderTable(students) {
       loadStudents();
     });
 
-    tr.querySelector('.resultBtn').addEventListener('click', () => {
-      openResultEditor(d);
-    });
-
+    tr.querySelector('.resultBtn').addEventListener('click', () => { openResultEditor(d); });
+    tr.querySelector('.editBtn').addEventListener('click', () => { openEditModal(d); });
     tr.querySelector('.removeBtn').addEventListener('click', async () => {
-      const ok = confirm(`"${d.name}" ka record delete karein?`);
-      if (!ok) return;
-      await db.collection('students').doc(d.id).delete();
-      loadStudents();
+      if (confirm(`Remove records for ${d.name}?`)) {
+        await db.collection('students').doc(d.id).delete();
+        loadStudents();
+      }
     });
-
     studentsBody.appendChild(tr);
   });
 }
 
+// Store Inventory and Ledger Controllers
+const productsBody = document.getElementById('productsBody');
+const storeStudentsBody = document.getElementById('storeStudentsBody');
+const addProductForm = document.getElementById('addProductForm');
+
+async function loadStoreData() {
+  try {
+    productsBody.innerHTML = '<tr><td colspan="3" class="muted">Loading catalog...</td></tr>';
+    const pSnap = await db.collection('products').orderBy('name').get();
+    allProductsCache = [];
+    pSnap.forEach((doc) => allProductsCache.push({ id: doc.id, ...doc.data() }));
+    renderProductsTable();
+  } catch (err) {
+    productsBody.innerHTML = `<tr><td colspan="3" class="danger">Error loading inventory catalog.</td></tr>`;
+  }
+
+  try {
+    storeStudentsBody.innerHTML = '<tr><td colspan="6" class="muted">Loading store transactions...</td></tr>';
+    const sSnap = await db.collection('students').orderBy('name').get();
+    allStoreStudentsCache = [];
+    sSnap.forEach((doc) => allStoreStudentsCache.push({ id: doc.id, ...doc.data() }));
+    renderStoreStudentsTable(allStoreStudentsCache);
+  } catch (err) {
+    storeStudentsBody.innerHTML = `<tr><td colspan="6" class="danger">Error loading store transactions.</td></tr>`;
+  }
+}
+
+addProductForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const name = document.getElementById('pName').value.trim();
+  const price = Number(document.getElementById('pPrice').value);
+  const btn = addProductForm.querySelector('button');
+  btn.disabled = true;
+  try {
+    await db.collection('products').add({ name, price });
+    addProductForm.reset();
+    loadStoreData();
+  } catch (err) {
+    alert("Unable to save product.");
+  }
+  btn.disabled = false;
+});
+
+function renderProductsTable() {
+  if (allProductsCache.length === 0) {
+    productsBody.innerHTML = '<tr><td colspan="3" class="muted">Inventory catalog is empty.</td></tr>';
+    return;
+  }
+  productsBody.innerHTML = '';
+  allProductsCache.forEach((p) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="text-bold">${sanitizeOutput(p.name)}</td>
+      <td>₹${p.price}</td>
+      <td><button class="btn small danger" onclick="deleteProduct('${p.id}', '${sanitizeOutput(p.name)}')">Delete</button></td>
+    `;
+    productsBody.appendChild(tr);
+  });
+}
+
+async function deleteProduct(id, name) {
+  if (confirm(`Delete ${name} from inventory?`)) {
+    await db.collection('products').doc(id).delete();
+    loadStoreData();
+  }
+}
+
+function renderStoreStudentsTable(students) {
+  if (students.length === 0) {
+    storeStudentsBody.innerHTML = '<tr><td colspan="6" class="muted">No student ledger data found.</td></tr>';
+    return;
+  }
+  storeStudentsBody.innerHTML = '';
+
+  students.forEach((student, index) => {
+    const items = student.storeItems || [];
+    const storePaid = Number(student.storePaid) || 0;
+
+    let storeTotalBill = 0;
+    let itemsText = items.map(i => `<span class="store-item-badge">${sanitizeOutput(i.productName)}</span>`).join('');
+    if (items.length === 0) itemsText = '<span class="muted table-text-muted">No items</span>';
+
+    items.forEach(i => storeTotalBill += Number(i.price));
+    const storeDue = Math.max(0, storeTotalBill - storePaid);
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><strong>${index + 1}. ${sanitizeOutput(student.name)}</strong></td>
+      <td>${itemsText}</td>
+      <td class="text-bold">₹${storeTotalBill}</td>
+      <td class="success">₹${storePaid}</td>
+      <td class="${storeDue > 0 ? 'danger' : 'success'} text-bold">₹${storeDue}</td>
+      <td>
+        <input type="number" class="storePaidInput input-ledger-action" min="0" step="1" placeholder="₹ Paid">
+        <button class="btn small primary storeUpdateBtn" title="Update Payment">Save</button>
+        <button class="btn small ghost assignBtn" title="Assign Item">🛍️ Assign</button>
+      </td>
+    `;
+
+    tr.querySelector('.storeUpdateBtn').addEventListener('click', async () => {
+      const val = tr.querySelector('.storePaidInput').value;
+      if (val === '') return;
+      await db.collection('students').doc(student.id).update({ storePaid: Number(val) });
+      loadStoreData();
+    });
+
+    tr.querySelector('.assignBtn').addEventListener('click', () => {
+      openAssignModal(student);
+    });
+
+    storeStudentsBody.appendChild(tr);
+  });
+}
+
+function openAssignModal(student) {
+  if (allProductsCache.length === 0) {
+    alert('Please register inventory items before assigning.');
+    return;
+  }
+  document.getElementById('assignStudentId').value = student.id;
+  document.getElementById('assignModalStudentName').textContent = `Assign to: ${student.name}`;
+
+  const select = document.getElementById('assignProductSelect');
+  select.innerHTML = '<option value="">-- Select Product --</option>';
+  allProductsCache.forEach((p) => {
+    const opt = document.createElement('option');
+    opt.value = `${p.name}|${p.price}`;
+    opt.textContent = `${p.name} - ₹${p.price}`;
+    select.appendChild(opt);
+  });
+
+  document.getElementById('assignProductModal').classList.remove('view-state-hidden');
+}
+
+function closeAssignModal() {
+  document.getElementById('assignProductModal').classList.add('view-state-hidden');
+}
+
+document.getElementById('assignProductForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const studentId = document.getElementById('assignStudentId').value;
+  const productVal = document.getElementById('assignProductSelect').value;
+  if (!productVal) return;
+
+  const [pName, pPrice] = productVal.split('|');
+  const newItem = { productName: pName, price: Number(pPrice), date: new Date().toISOString() };
+
+  try {
+    await db.collection('students').doc(studentId).update({
+      storeItems: firebase.firestore.FieldValue.arrayUnion(newItem)
+    });
+    closeAssignModal();
+    loadStoreData();
+  } catch (error) {
+    alert('Failed to register product assignment.');
+  }
+});
+
+// Modal Operations and Entity Mutations
+function openEditModal(student) {
+  document.getElementById('editStudentId').value = student.id;
+  document.getElementById('editName').value = student.name || '';
+  document.getElementById('editDate').value = student.admissionDate || '';
+  document.getElementById('editEmail').value = student.email || '';
+  document.getElementById('editPassword').value = student.password || '';
+  document.getElementById('editTotalFee').value = student.totalFee || 0;
+  document.getElementById('editDiscount').value = student.discount || 0;
+
+  document.getElementById('editStudentModal').classList.remove('view-state-hidden');
+}
+
+function closeEditModal() {
+  document.getElementById('editStudentModal').classList.add('view-state-hidden');
+}
+
+async function updateStudentDatabase() {
+  const id = document.getElementById('editStudentId').value;
+  const newName = document.getElementById('editName').value;
+  const newDate = document.getElementById('editDate').value;
+  const newEmail = document.getElementById('editEmail').value;
+  const newPassword = document.getElementById('editPassword').value;
+  const newTotalFee = Number(document.getElementById('editTotalFee').value);
+  const newDiscount = Number(document.getElementById('editDiscount').value);
+
+  try {
+    await db.collection('students').doc(id).update({
+      name: newName,
+      admissionDate: newDate,
+      email: newEmail,
+      password: newPassword,
+      totalFee: newTotalFee,
+      discount: newDiscount
+    });
+    closeEditModal();
+    loadStudents();
+  } catch (error) {
+    alert("Unable to update student records.");
+  }
+}
+
+// Search Filter Handlers
 searchInput.addEventListener('input', (e) => {
   const query = e.target.value.toLowerCase().trim();
   const filtered = allStudentsCache.filter((s) => {
-    const nameMatch = (s.name || '').toLowerCase().includes(query);
-    const emailMatch = (s.email || '').toLowerCase().includes(query);
-    return nameMatch || emailMatch;
+    return (s.name || '').toLowerCase().includes(query) || (s.email || '').toLowerCase().includes(query);
   });
-  renderTable(filtered);
+  renderStudentsLedger(filtered);
 });
 
+searchStoreInput.addEventListener('input', (e) => {
+  const query = e.target.value.toLowerCase().trim();
+  const filtered = allStoreStudentsCache.filter((s) => {
+    return (s.name || '').toLowerCase().includes(query);
+  });
+  renderStoreStudentsTable(filtered);
+});
+
+// Examination Result Management
+const resultModalDialog = document.getElementById('resultModal');
 function openResultEditor(student) {
-  resultStudentId.value = student.id;
-  resultModalStudentName.textContent = `Student: ${student.name}`;
+  document.getElementById('resultStudentId').value = student.id;
   if (student.result && student.result.isPublished) {
-    rMarks.value = student.result.marks || '';
-    rGrade.value = student.result.grade || '';
-    rStatus.value = student.result.status || 'PASS';
+    document.getElementById('rMarks').value = student.result.marks || '';
+    document.getElementById('rGrade').value = student.result.grade || '';
+    document.getElementById('rStatus').value = student.result.status || 'PASS';
   } else {
-    rMarks.value = '';
-    rGrade.value = '';
-    rStatus.value = 'PASS';
+    document.getElementById('rMarks').value = '';
+    document.getElementById('rGrade').value = '';
+    document.getElementById('rStatus').value = 'PASS';
   }
-  resultModal.style.display = 'flex';
+  resultModalDialog.classList.remove('view-state-hidden');
 }
 
-closeResultModal.addEventListener('click', () => {
-  resultModal.style.display = 'none';
+document.getElementById('closeResultModal').addEventListener('click', () => {
+  resultModalDialog.classList.add('view-state-hidden');
 });
 
-resultForm.addEventListener('submit', async (e) => {
+document.getElementById('resultForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const id = resultStudentId.value;
+  const id = document.getElementById('resultStudentId').value;
   await db.collection('students').doc(id).update({
     result: {
-      marks: rMarks.value.trim(),
-      grade: rGrade.value.trim().toUpperCase(),
-      status: rStatus.value,
+      marks: document.getElementById('rMarks').value.trim(),
+      grade: document.getElementById('rGrade').value.trim().toUpperCase(),
+      status: document.getElementById('rStatus').value,
       isPublished: true
     }
   });
-  resultModal.style.display = 'none';
+  resultModalDialog.classList.add('view-state-hidden');
   loadStudents();
 });
 
-btnRemoveResult.addEventListener('click', async () => {
-  const id = resultStudentId.value;
-  if (!confirm('Exam result unpublish/delete karein?')) return;
-  await db.collection('students').doc(id).update({
-    result: null
-  });
-  resultModal.style.display = 'none';
-  loadStudents();
+document.getElementById('btnRemoveResult').addEventListener('click', async () => {
+  const id = document.getElementById('resultStudentId').value;
+  if (confirm('Unpublish and clear examination results?')) {
+    await db.collection('students').doc(id).update({ result: null });
+    resultModalDialog.classList.add('view-state-hidden');
+    loadStudents();
+  }
 });
 
-function friendlyError(code) {
+// Sanitization and Error Translation Helpers
+function formatAuthErrorMessage(code) {
   switch (code) {
-    case 'auth/email-already-in-use': return 'Ye email pehle se use ho raha hai.';
-    case 'auth/invalid-email': return 'Email sahi format mein nahi hai.';
-    case 'auth/weak-password': return 'Password kam se kam 6 characters ka hona chahiye.';
+    case 'auth/email-already-in-use': return 'The provided email is already registered.';
+    case 'auth/invalid-email': return 'Malformed email address provided.';
+    case 'auth/weak-password': return 'Password must be at least 6 characters.';
     case 'auth/user-not-found':
     case 'auth/wrong-password':
-    case 'auth/invalid-credential': return 'Email ya password galat hai.';
-    case 'auth/too-many-requests': return 'Bahut zyada attempts ho gaye. Thodi der baad try karein.';
-    case 'auth/network-request-failed': return 'Internet connection check karein.';
-    default: return 'Login nahi ho paya. Dobara try karein.';
+    case 'auth/invalid-credential': return 'Invalid email or password.';
+    default: return 'Unable to process authentication request.';
   }
 }
 
-function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
+function sanitizeOutput(str) {
+  const container = document.createElement('div');
+  container.textContent = str;
+  return container.innerHTML;
 }

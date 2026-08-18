@@ -10,54 +10,50 @@
 </head>
 <body>
 
+<!-- Administrator Authentication View -->
 <div id="loginView" class="auth-wrap">
-  <!-- Top Right Student Portal Link -->
   <div class="top-nav-link">
     <a href="index.html" class="nav-switch-btn">👨‍🎓 Student Portal →</a>
   </div>
-
   <form id="loginForm" class="auth-card">
     <div class="brand-header">
-      <img src="logo.png" alt="Shama Henna Classes Logo" class="brand-logo" onerror="this.style.display='none'">
+      <img src="logo.png" alt="Logo" class="brand-logo" onerror="this.classList.add('view-state-hidden')">
       <h1 class="brand-title">Shama</h1>
       <span class="brand-subtitle">HENNA CLASSES</span>
     </div>
-
-    <div class="divider"></div>
-
     <h2>Admin Portal</h2>
-    <p class="muted">Sirf institute head / instructor ke login ke liye.</p>
-
+    <p class="muted">Authorized access for institute administration and instructors.</p>
     <label for="email">Admin Email</label>
     <input type="email" id="email" required autocomplete="username" placeholder="admin@example.com">
-
     <label for="password">Admin Password</label>
-    <input type="password" id="password" required autocomplete="current-password" placeholder="••••••••">
-
+    <div class="password-wrapper">
+      <input type="password" id="password" required autocomplete="current-password" placeholder="••••••••">
+      <button type="button" class="toggle-password" onclick="togglePasswordVisibility('password', this)">👁️</button>
+    </div>
     <button type="submit" class="btn primary full">Login to Admin Panel</button>
     <p id="loginError" class="error"></p>
   </form>
 </div>
 
-<div id="dashboardView" style="display:none;">
-  <div class="topbar">
+<!-- Main Administrator Dashboard -->
+<div id="dashboardView" class="view-state-hidden">
+  <header class="topbar">
     <div class="topbar-brand">
-      <img src="logo.png" alt="Logo" class="topbar-logo" onerror="this.style.display='none'">
+      <img src="logo.png" alt="Logo" class="topbar-logo" onerror="this.classList.add('view-state-hidden')">
       <div>
         <h2>Shama Henna Classes</h2>
         <span class="muted-tag">Instructor Dashboard</span>
       </div>
     </div>
     <div class="topbar-actions">
+      <button id="navToStoreBtn" class="btn primary small btn-store-nav">🛒 Store Dashboard</button>
       <a href="index.html" class="btn ghost small">View Student Portal</a>
-      <button id="logoutBtn" class="btn ghost">Logout</button>
+      <button id="logoutBtn" class="btn ghost small">Logout</button>
     </div>
-  </div>
+  </header>
 
   <main class="container">
-
-    <!-- Dashboard Summary Cards -->
-    <div class="summary-grid">
+    <section class="summary-grid">
       <div class="stat-card">
         <div class="stat-label">Total Students</div>
         <div class="stat-value" id="statStudents">0</div>
@@ -72,68 +68,41 @@
       </div>
       <div class="stat-card stat-gold">
         <div class="stat-label">Total Discount Given</div>
-        <div class="stat-value" style="color: var(--gold);" id="statDiscount">₹0</div>
+        <div class="stat-value text-gold-bold" id="statDiscount">₹0</div>
       </div>
-    </div>
+    </section>
 
-    <div class="card">
+    <section class="card">
       <div class="card-head">
         <h2>✨ Add New Student</h2>
         <span class="badge">Registration Form</span>
       </div>
       <form id="addStudentForm" class="grid-form">
-        <div>
-          <label for="sName">Student Full Name</label>
-          <input type="text" id="sName" placeholder="e.g. Fatima Khan" required>
-        </div>
-        <div>
-          <label for="sDate">Joining / Admission Date</label>
-          <input type="date" id="sDate" required>
-        </div>
-        <div>
-          <label for="sTotal">Total Course Fee (₹)</label>
-          <input type="number" id="sTotal" min="0" step="1" placeholder="e.g. 5000" required>
-        </div>
-        <div>
-          <label for="sDiscount">Discount Given (₹)</label>
-          <input type="number" id="sDiscount" min="0" step="1" placeholder="0" value="0">
-        </div>
-        <div>
-          <label for="sPaid">Paid Amount (₹)</label>
-          <input type="number" id="sPaid" min="0" step="1" placeholder="0" required value="0">
-        </div>
-        <div>
-          <label for="sEmail">Student Login ID (Email)</label>
-          <input type="email" id="sEmail" required placeholder="student1@henna.com">
-        </div>
-        <div>
-          <label for="sPassword">Student Login Password</label>
-          <input type="text" id="sPassword" required minlength="6" placeholder="Min 6 characters">
-        </div>
+        <div><label for="sName">Student Full Name</label><input type="text" id="sName" placeholder="e.g. Fatima Khan" required></div>
+        <div><label for="sDate">Joining / Admission Date</label><input type="date" id="sDate" class="date-fix" required></div>
+        <div><label for="sTotal">Total Course Fee (₹)</label><input type="number" id="sTotal" min="0" step="1" placeholder="e.g. 5000" required></div>
+        <div><label for="sDiscount">Discount Given (₹)</label><input type="number" id="sDiscount" min="0" step="1" placeholder="0" value="0"></div>
+        <div><label for="sPaid">Paid Amount (₹)</label><input type="number" id="sPaid" min="0" step="1" placeholder="0" required value="0"></div>
+        <div><label for="sEmail">Student Login ID (Email)</label><input type="email" id="sEmail" required placeholder="student1@henna.com"></div>
+        <div><label for="sPassword">Student Login Password</label><input type="text" id="sPassword" required minlength="6" placeholder="Min 6 characters"></div>
         <button type="submit" class="btn primary">Enroll & Save Student</button>
       </form>
       <p id="addStatus" class="status"></p>
-    </div>
+    </section>
 
-    <div class="card">
+    <section class="card">
       <div class="card-head">
         <h2>📋 Registered Students & Fee Records</h2>
       </div>
-
-      <!-- Real-time Student Search -->
       <div class="search-box">
         <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search student by name or email ID...">
       </div>
-
-      <p id="permissionError" class="error" style="display:none;">
-        Aapka account admin list mein register nahi hai. Firebase Console par UID check karein[span_10](start_span)[span_10](end_span).
-      </p>
-
+      <p id="permissionError" class="error view-state-hidden">Access restricted. Administrator credentials required.</p>
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
-              <th>Student Name</th>
+              <th>Student Details</th>
               <th>Admission</th>
               <th>Total Fee</th>
               <th>Discount</th>
@@ -144,46 +113,164 @@
             </tr>
           </thead>
           <tbody id="studentsBody">
-            <tr><td colspan="8" class="muted">Loading students ledger...</td></tr>
+            <tr><td colspan="8" class="muted">Loading student records...</td></tr>
           </tbody>
         </table>
       </div>
-    </div>
-
+    </section>
   </main>
 </div>
 
-<!-- Modal: Update Result -->
-<div id="resultModal" class="modal-overlay" style="display:none;">
+<!-- Store Management Interface -->
+<div id="storeDashboardView" class="store-dashboard-container view-state-hidden">
+  <header class="topbar topbar-store">
+    <div class="topbar-brand">
+      <div>
+        <h2>🛒 Store Inventory & Ledgers</h2>
+        <span class="muted-tag">Product Catalog & Transactions</span>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <button id="navToMainBtn" class="btn ghost small">🔙 Back to Main Dashboard</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card card-store-header">
+      <div class="card-head">
+        <h2>📦 Manage Store Products</h2>
+      </div>
+      <form id="addProductForm" class="store-product-form">
+        <input type="text" id="pName" placeholder="Product Name (e.g. Henna Cone)" required class="form-input-primary-flex">
+        <input type="number" id="pPrice" placeholder="Price (₹)" required min="1" class="form-input-secondary-flex">
+        <button type="submit" class="btn primary">Add Product</button>
+      </form>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Product Name</th>
+              <th>Price</th>
+              <th class="table-action-col">Action</th>
+            </tr>
+          </thead>
+          <tbody id="productsBody">
+            <tr><td colspan="3" class="muted">Loading inventory catalog...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h2>👩‍🎓 Student Store Records</h2>
+      </div>
+      <div class="search-box">
+        <input type="text" id="searchStoreInput" class="search-input" placeholder="🔍 Search student by name in store...">
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Student Name</th>
+              <th>Items Taken</th>
+              <th>Total Bill</th>
+              <th>Paid Amount</th>
+              <th>Due Amount</th>
+              <th>Store Actions</th>
+            </tr>
+          </thead>
+          <tbody id="storeStudentsBody">
+            <tr><td colspan="6" class="muted">Loading store ledger records...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- Dialog Modals -->
+<div id="assignProductModal" class="modal-overlay view-state-hidden">
   <div class="modal-content">
-    <div class="card-head" style="margin-bottom: 12px; padding-bottom: 8px;">
-      <h3 style="color: var(--primary);">📝 Update Exam Result</h3>
+    <div class="card-head modal-head">
+      <h3>🛍️ Assign Product to Student</h3>
+      <button type="button" onclick="closeAssignModal()" class="btn ghost small">✕</button>
+    </div>
+    <p id="assignModalStudentName" class="modal-subtitle"></p>
+    <form id="assignProductForm">
+      <input type="hidden" id="assignStudentId">
+      <label>Select Product:</label>
+      <select id="assignProductSelect" required class="modal-select"></select>
+      <button type="submit" class="btn primary full">Add to Student's Account</button>
+    </form>
+  </div>
+</div>
+
+<div id="resultModal" class="modal-overlay view-state-hidden">
+  <div class="modal-content">
+    <div class="card-head modal-head">
+      <h3>📝 Update Exam Result</h3>
       <button type="button" id="closeResultModal" class="btn ghost small">✕</button>
     </div>
-    <p id="resultModalStudentName" style="font-weight: 600; color: var(--gold); margin-bottom: 12px;"></p>
-    
     <form id="resultForm">
       <input type="hidden" id="resultStudentId">
-      
-      <label for="rMarks">Marks Obtained (e.g. 85/100)</label>
-      <input type="text" id="rMarks" placeholder="e.g. 88/100" required>
-      
+      <label for="rMarks">Marks Obtained</label>
+      <input type="text" id="rMarks" class="modal-field" placeholder="e.g. 88/100" required>
       <label for="rGrade">Grade</label>
-      <input type="text" id="rGrade" placeholder="e.g. A+ / A / B" required>
-      
+      <input type="text" id="rGrade" class="modal-field" placeholder="e.g. A+ / A / B" required>
       <label for="rStatus">Result Status</label>
-      <select id="rStatus" required>
+      <select id="rStatus" class="modal-field" required>
         <option value="PASS">PASS</option>
         <option value="FAIL">FAIL</option>
       </select>
-      
-      <div style="display: flex; gap: 10px; margin-top: 18px;">
-        <button type="submit" class="btn primary" style="flex: 1;">Save & Publish Result</button>
+      <div class="modal-footer-actions">
+        <button type="submit" class="btn primary btn-flex-fill">Save & Publish Result</button>
         <button type="button" id="btnRemoveResult" class="btn danger small">Unpublish</button>
       </div>
     </form>
   </div>
 </div>
+
+<div id="editStudentModal" class="modal-overlay view-state-hidden">
+  <div class="modal-content modal-content-lg">
+    <div class="card-head modal-head">
+      <h3>✏️ Edit Student Details</h3>
+      <button type="button" onclick="closeEditModal()" class="btn ghost small">✕</button>
+    </div>
+    <form id="editStudentForm">
+      <input type="hidden" id="editStudentId">
+      <label>Name:</label>
+      <input type="text" id="editName" class="modal-field" required>
+      <label>Admission Date:</label>
+      <input type="date" id="editDate" class="date-fix modal-field" required>
+      <label>Email (Login ID):</label>
+      <input type="email" id="editEmail" class="modal-field" required>
+      <label>Login Password:</label>
+      <input type="text" id="editPassword" class="modal-field" required>
+      <label>Total Fee (₹):</label>
+      <input type="number" id="editTotalFee" class="modal-field" required>
+      <label>Discount (₹):</label>
+      <input type="number" id="editDiscount" class="modal-field-bottom">
+      <div class="modal-footer-actions-compact">
+        <button type="button" onclick="closeEditModal()" class="btn ghost btn-flex-fill">Cancel</button>
+        <button type="button" onclick="updateStudentDatabase()" class="btn primary btn-flex-fill">Update Record</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function togglePasswordVisibility(inputId, triggerElement) {
+    const field = document.getElementById(inputId);
+    if (field.type === 'password') {
+      field.type = 'text';
+      triggerElement.textContent = '🙈';
+    } else {
+      field.type = 'password';
+      triggerElement.textContent = '👁️';
+    }
+  }
+</script>
 
 <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-auth-compat.js"></script>
