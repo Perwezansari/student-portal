@@ -38,9 +38,12 @@
   </div>
 </div>
 
+<!-- Firebase Scripts (Yahan Auth wali line miss ho gayi thi pehle) -->
 <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-auth-compat.js"></script> 
 <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
+
 <script>
   // Extract Certificate ID from URL
   const urlParams = new URLSearchParams(window.location.search);
@@ -67,6 +70,7 @@
         verifyContent.innerHTML = `<p class="error">❌ No matching certificate found in our official records.</p>`;
       }
     }).catch((error) => {
+      console.error(error);
       verifyContent.innerHTML = `<p class="error">⚠️ Network error. Please try again.</p>`;
     });
   }
