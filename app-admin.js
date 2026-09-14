@@ -704,7 +704,7 @@ if (certForm) {
       });
 
       // Display the generated URL
-      const verifyLink = `https://perwezansari.github.io/verify.html?id=${certId}`;
+     const verifyLink = `https://perwezansari.github.io/student-portal/verify.html?id=${certId}`;
       certGeneratedLink.value = verifyLink;
       certLinkResult.style.display = 'block';
       
