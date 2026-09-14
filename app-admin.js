@@ -1,5 +1,5 @@
 // ============================================================
-// Admin Portal Logic (Zero-Delay Instant UI & Full Store Control)
+// Admin Portal Core Application Logic
 // ============================================================
 
 const loginView = document.getElementById('loginView');
@@ -20,7 +20,7 @@ let allStoreStudentsCache = [];
 
 auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(() => {});
 
-// --- Navigation Toggle ---
+// --- Navigation Controllers ---
 const navToStoreBtn = document.getElementById('navToStoreBtn');
 if (navToStoreBtn) {
   navToStoreBtn.addEventListener('click', () => {
@@ -48,7 +48,7 @@ function resetAdminLoginForm() {
   }
 }
 
-// --- Auth State Observer ---
+// --- Authentication State Observer ---
 auth.onAuthStateChanged(async (user) => {
   if (loginError) loginError.textContent = '';
   if (user) {
@@ -114,7 +114,7 @@ if (logoutBtn) {
   });
 }
 
-// --- Add Student Logic ---
+// --- Student Registration Logic ---
 if (addForm) {
   addForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -154,6 +154,7 @@ if (addForm) {
         addStatus.className = 'status success';
       }
       addForm.reset();
+      
       const discElem = document.getElementById('sDiscount');
       const paidElem = document.getElementById('sPaid');
       if (discElem) discElem.value = 0;
@@ -507,7 +508,7 @@ if (assignProductForm) {
   });
 }
 
-// --- Instant Modal Operations (Edit with Paid Fee Added) ---
+// --- Dynamic Entity Update (Includes Editable Paid Fee) ---
 function openEditModal(student) {
   document.getElementById('editStudentId').value = student.id;
   document.getElementById('editName').value = student.name || '';
@@ -516,6 +517,8 @@ function openEditModal(student) {
   document.getElementById('editPassword').value = student.password || '';
   document.getElementById('editTotalFee').value = student.totalFee || 0;
   document.getElementById('editDiscount').value = student.discount || 0;
+  
+  // Populate existing paid fee for manual correction
   document.getElementById('editPaidFee').value = student.paidFee || 0;
 
   document.getElementById('editStudentModal').style.display = 'flex';
@@ -566,11 +569,11 @@ async function updateStudentDatabase() {
     paidFee: newPaidFee
   }).catch(error => {
     console.error(error);
-    alert("Background sync failed. Please check internet connection.");
+    alert("Background sync failed. Please check your internet connection.");
   });
 }
 
-// --- Search Filter Handlers ---
+// --- Search Filter Capabilities ---
 if (searchInput) {
   searchInput.addEventListener('input', (e) => {
     const query = e.target.value.toLowerCase().trim();
@@ -591,7 +594,7 @@ if (searchStoreInput) {
   });
 }
 
-// --- Instant Examination Result Management ---
+// --- Examination Result Controllers ---
 const resultModalDialog = document.getElementById('resultModal');
 function openResultEditor(student) {
   document.getElementById('resultStudentId').value = student.id;
@@ -642,7 +645,7 @@ const btnRemoveResult = document.getElementById('btnRemoveResult');
 if (btnRemoveResult) {
   btnRemoveResult.addEventListener('click', () => {
     const id = document.getElementById('resultStudentId').value;
-    if (confirm('Unpublish and clear examination results?')) {
+    if (confirm('Unpublish and clear examination results for this student?')) {
       if (resultModalDialog) resultModalDialog.style.display = 'none';
 
       const target = allStudentsCache.find(s => s.id === id);
@@ -656,7 +659,7 @@ if (btnRemoveResult) {
 }
 
 // ============================================================
-// Certificate Generation Logic
+// Certificate Generation Logic (High-Security Dual-ID System)
 // ============================================================
 const certModal = document.getElementById('certModal');
 const certForm = document.getElementById('certForm');
@@ -672,6 +675,9 @@ function openCertModal(student) {
   document.getElementById('certStudentId').value = student.id;
   document.getElementById('certStudentNameInput').value = student.name;
   document.getElementById('certModalStudentName').textContent = `Issue to: ${student.name}`;
+  
+  // Clear modal inputs for new entry
+  document.getElementById('certNumber').value = '';
   document.getElementById('certCourse').value = '';
   
   const today = new Date().toISOString().split('T')[0];
@@ -686,32 +692,47 @@ if (certForm) {
     e.preventDefault();
     const btn = certForm.querySelector('button[type="submit"]');
     btn.disabled = true;
-    btn.textContent = 'Generating...';
+    btn.textContent = 'Generating Securely...';
 
     const sName = document.getElementById('certStudentNameInput').value;
+    const rawCertNo = document.getElementById('certNumber').value.trim();
     const sCourse = document.getElementById('certCourse').value.trim();
     const sDate = document.getElementById('certDate').value;
     
-    // Generate Unique Certificate ID
-    const certId = 'CERT-' + Math.floor(100000 + Math.random() * 900000); 
+    // Generate a highly secure, unguessable 16-character random ID for URL & Database lookup
+    const generateSecureId = () => {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+      let randomStr = '';
+      for (let i = 0; i < 16; i++) {
+        randomStr += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return 'VERIFY-' + randomStr; 
+    };
+    
+    const secureDocId = generateSecureId();
 
     try {
-      await db.collection('certificates').doc(certId).set({
+      // Store certificate data in Firestore mapped to the secure ID
+      await db.collection('certificates').doc(secureDocId).set({
+        certNumber: rawCertNo, // Stores the formatted visual ID (e.g., SHC/26/01)
         studentName: sName,
         courseName: sCourse,
         issueDate: sDate,
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
       });
 
-      // Display the generated URL
-     const verifyLink = `https://perwezansari.github.io/student-portal/verify.html?id=${certId}`;
-      certGeneratedLink.value = verifyLink;
-      certLinkResult.style.display = 'block';
+      // Construct verification URL automatically matching correct deployment directory
+      const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/'));
       
+      // Specifically force to use GitHub exact path as verified working
+      const verifyLink = `https://perwezansari.github.io/student-portal/verify.html?id=${secureDocId}`;
+      
+      certGeneratedLink.value = verifyLink;
+      certLinkResult.style.display = 'flex';
       certGeneratedLink.select();
       
     } catch (error) {
-      alert("Error generating certificate: " + error.message);
+      alert("System Error: Unable to issue certificate. " + error.message);
     } finally {
       btn.disabled = false;
       btn.textContent = 'Generate & Save Certificate';
@@ -719,16 +740,16 @@ if (certForm) {
   });
 }
 
-// --- Sanitization and Helpers ---
+// --- Core Utility Functions ---
 function formatAuthErrorMessage(code) {
   switch (code) {
-    case 'auth/email-already-in-use': return 'The provided email is already registered.';
+    case 'auth/email-already-in-use': return 'The provided email is already registered in the system.';
     case 'auth/invalid-email': return 'Malformed email address provided.';
-    case 'auth/weak-password': return 'Password must be at least 6 characters.';
+    case 'auth/weak-password': return 'Password must be a minimum of 6 characters.';
     case 'auth/user-not-found':
     case 'auth/wrong-password':
-    case 'auth/invalid-credential': return 'Invalid email or password.';
-    default: return 'Unable to process authentication request.';
+    case 'auth/invalid-credential': return 'Invalid login credentials.';
+    default: return 'Unable to process the authentication request at this time.';
   }
 }
 

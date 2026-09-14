@@ -8,62 +8,161 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <style>
-  .verify-box { text-align: left; background: #FCFAF7; padding: 15px; border-radius: 10px; margin-top: 15px; border: 1px solid #EFE6DD; }
-  .verify-row { margin-bottom: 8px; font-size: 14px; }
-  .verify-row span { color: #7A6E6D; font-weight: 600; font-size: 12px; text-transform: uppercase; display: block; }
-  .verify-row strong { color: #241A1B; font-size: 15px; }
-  .cert-valid { color: #1E7E34; font-weight: bold; font-size: 18px; display: flex; justify-content: center; align-items: center; gap: 5px; margin-bottom: 15px; }
+  /* Premium Certificate Verification Card Styling (Optimized for fast rendering) */
+  .verify-container {
+    text-align: center;
+    max-width: 400px;
+    width: 100%;
+  }
+  
+  .verify-card-premium {
+    background: #ffffff;
+    border: 2px solid #C49A45;
+    border-radius: 12px;
+    padding: 30px 20px;
+    margin-top: 25px;
+    box-shadow: 0 15px 35px rgba(120, 32, 43, 0.1);
+    position: relative;
+    text-align: center;
+  }
+  
+  /* Inner Dashed Border */
+  .verify-card-premium::before {
+    content: '';
+    position: absolute;
+    top: 8px; left: 8px; right: 8px; bottom: 8px;
+    border: 1px dashed #EADBCC;
+    border-radius: 8px;
+    pointer-events: none;
+  }
+
+  .verified-badge-premium {
+    background: #1E7E34;
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 12px rgba(30, 126, 52, 0.3);
+    position: relative;
+    z-index: 2;
+  }
+
+  .detail-group {
+    margin-bottom: 18px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .detail-label {
+    font-size: 11px;
+    font-weight: 800;
+    color: #C49A45;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 4px;
+  }
+
+  .detail-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: #450B12;
+  }
+
+  .detail-value.name {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 32px;
+    font-weight: 700;
+    color: #78202B;
+    letter-spacing: 0.5px;
+  }
+
+  .footer-details {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 25px;
+    border-top: 1px solid #EADBCC;
+    padding-top: 15px;
+  }
+  
+  .footer-left { text-align: left; }
+  .footer-right { text-align: right; }
+  .footer-value { font-size: 14px; font-weight: 700; color: #450B12; }
 </style>
 </head>
 <body>
 
 <div class="auth-wrap">
-  <!-- Top Navigation Link to Student Portal -->
   <div class="top-nav-link">
     <a href="index.html" class="nav-switch-btn">🔐 Student Portal →</a>
   </div>
 
-  <div class="auth-card" style="text-align: center;">
+  <div class="auth-card verify-container">
     <div class="brand-header">
       <img src="logo.png" alt="Logo" class="brand-logo" onerror="this.style.display='none'">
       <h1 class="brand-title">Shama</h1>
       <span class="brand-subtitle">HENNA CLASSES</span>
     </div>
     
-    <h2 style="text-align: center; margin-top: 15px;">Certificate Verification</h2>
-    
-    <div id="verifyContent" style="margin-top: 20px;">
+    <div id="verifyContent" class="verify-content-wrapper">
       <p class="muted">Scanning official database...</p>
     </div>
   </div>
 </div>
 
-<!-- Firebase Scripts (Yahan Auth wali line miss ho gayi thi pehle) -->
+<!-- Firebase Service Connectors -->
 <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-auth-compat.js"></script> 
+<script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
 
 <script>
-  // Extract Certificate ID from URL
+  // Process incoming verification request via URL parameter
   const urlParams = new URLSearchParams(window.location.search);
   const certId = urlParams.get('id');
   const verifyContent = document.getElementById('verifyContent');
 
   if (!certId) {
-    verifyContent.innerHTML = `<p class="error">❌ Invalid QR Code. Certificate ID is missing.</p>`;
+    verifyContent.innerHTML = `<p class="error">❌ Invalid QR Code. Authentication ID is missing.</p>`;
   } else {
-    // Fetch certificate details from Firestore
+    // Validate secure ID against Firestore database
     db.collection('certificates').doc(certId).get().then((doc) => {
       if (doc.exists) {
         const data = doc.data();
+        const displayCertId = data.certNumber ? data.certNumber : certId; 
+
         verifyContent.innerHTML = `
-          <div class="cert-valid">✅ Verified Student</div>
-          <div class="verify-box">
-            <div class="verify-row"><span>Student Name</span><strong>${data.studentName}</strong></div>
-            <div class="verify-row"><span>Course Completed</span><strong>${data.courseName}</strong></div>
-            <div class="verify-row"><span>Issue Date</span><strong>${data.issueDate}</strong></div>
-            <div class="verify-row"><span>Certificate ID</span><strong>${certId}</strong></div>
+          <div class="verify-card-premium">
+            <div class="verified-badge-premium">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              Officially Verified
+            </div>
+            
+            <div class="detail-group">
+              <div class="detail-label">Proudly Presented To</div>
+              <div class="detail-value name">${data.studentName}</div>
+            </div>
+            
+            <div class="detail-group">
+              <div class="detail-label">For Completion Of</div>
+              <div class="detail-value">${data.courseName}</div>
+            </div>
+            
+            <div class="footer-details detail-group">
+              <div class="footer-left">
+                <div class="detail-label">Issue Date</div>
+                <div class="footer-value">${data.issueDate}</div>
+              </div>
+              <div class="footer-right">
+                <div class="detail-label">Certificate No.</div>
+                <div class="footer-value">${displayCertId}</div>
+              </div>
+            </div>
           </div>
         `;
       } else {
@@ -71,7 +170,7 @@
       }
     }).catch((error) => {
       console.error(error);
-      verifyContent.innerHTML = `<p class="error">⚠️ Network error. Please try again.</p>`;
+      verifyContent.innerHTML = `<p class="error">⚠️ Network error. Please verify your connection.</p>`;
     });
   }
 </script>
