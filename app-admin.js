@@ -39,7 +39,6 @@ if (navToMainBtn) {
   });
 }
 
-// --- Helper to Reset Admin Login Form State ---
 function resetAdminLoginForm() {
   if (loginForm) loginForm.reset();
   const submitBtn = loginForm ? loginForm.querySelector('button[type="submit"]') : null;
@@ -144,16 +143,8 @@ if (addForm) {
       secondaryApp = null;
 
       const newStudentData = {
-        name,
-        admissionDate,
-        totalFee,
-        discount,
-        paidFee,
-        email,
-        password,
-        result: null,
-        storeItems: [],
-        storePaid: 0
+        name, admissionDate, totalFee, discount, paidFee,
+        email, password, result: null, storeItems: [], storePaid: 0
       };
 
       await db.collection('students').doc(uid).set(newStudentData);
@@ -168,7 +159,6 @@ if (addForm) {
       if (discElem) discElem.value = 0;
       if (paidElem) paidElem.value = 0;
       
-      // Instant Local List Insertion
       allStudentsCache.push({ id: uid, ...newStudentData });
       updateSummaryMetrics(allStudentsCache);
       renderStudentsLedger(allStudentsCache);
@@ -186,7 +176,6 @@ if (addForm) {
   });
 }
 
-// --- Fetch & Render Main Students Ledger ---
 async function loadStudents() {
   if (!studentsBody) return;
   if (allStudentsCache.length === 0) {
@@ -274,29 +263,28 @@ function renderStudentsLedger(students) {
           <div class="action-row-group">
             <button class="btn small ghost editBtn" type="button" title="Edit Record">✏️ Edit</button>
             <button class="btn small ghost resultBtn" type="button" title="Record Result">📝 Result</button>
+            <button class="btn small ghost certBtn" type="button" title="Issue Certificate" style="color:#C49A45; border-color:#C49A45;">🎓 Cert</button>
             <button class="btn small danger removeBtn" type="button" title="Delete Record">✕</button>
           </div>
         </div>
       </td>
     `;
 
-    // Instant Payment Update
     tr.querySelector('.updateBtn').addEventListener('click', async () => {
       const valInput = tr.querySelector('.paidInput').value;
       if (valInput === '') return;
       const newPayment = Number(valInput) || 0;
       d.paidFee = paid + newPayment;
       
-      // Instant Render
       updateSummaryMetrics(allStudentsCache);
       renderStudentsLedger(allStudentsCache);
-      
-      // Background Sync
       db.collection('students').doc(d.id).update({ paidFee: d.paidFee });
     });
 
     tr.querySelector('.resultBtn').addEventListener('click', () => { openResultEditor(d); });
     tr.querySelector('.editBtn').addEventListener('click', () => { openEditModal(d); });
+    tr.querySelector('.certBtn').addEventListener('click', () => { openCertModal(d); });
+    
     tr.querySelector('.removeBtn').addEventListener('click', async () => {
       if (confirm(`Remove records for ${d.name}?`)) {
         allStudentsCache = allStudentsCache.filter(s => s.id !== d.id);
@@ -401,7 +389,6 @@ function renderStoreStudentsTable(students) {
     items.forEach(i => storeTotalBill += Number(i.price));
     const storeDue = Math.max(0, storeTotalBill - existingStorePaid);
 
-    // Modern Chip Layout
     let itemsText = '';
     if (items.length > 0) {
       itemsText = items.map((item, itemIdx) => `
@@ -428,21 +415,15 @@ function renderStoreStudentsTable(students) {
       </td>
     `;
 
-    // 1. Instant Payment Accumulation
     tr.querySelector('.storeUpdateBtn').addEventListener('click', () => {
       const valInput = tr.querySelector('.storePaidInput').value;
       if (valInput === '') return;
       const newPayment = Number(valInput) || 0;
       student.storePaid = existingStorePaid + newPayment;
-
-      // Instant UI
       renderStoreStudentsTable(allStoreStudentsCache);
-      
-      // Background Sync
       db.collection('students').doc(student.id).update({ storePaid: student.storePaid });
     });
 
-    // 2. Instant Remove Product & Auto-Reset
     tr.querySelectorAll('.removeStoreItemBtn').forEach(btn => {
       btn.addEventListener('click', () => {
         const sId = btn.getAttribute('data-student-id');
@@ -453,12 +434,9 @@ function renderStoreStudentsTable(students) {
           if (targetStudent && targetStudent.storeItems) {
             targetStudent.storeItems.splice(idx, 1);
             if (targetStudent.storeItems.length === 0) {
-              targetStudent.storePaid = 0; // Auto-zero
+              targetStudent.storePaid = 0; 
             }
-            // Instant render
             renderStoreStudentsTable(allStoreStudentsCache);
-
-            // Background Sync
             db.collection('students').doc(sId).update({ 
               storeItems: targetStudent.storeItems,
               storePaid: targetStudent.storePaid 
@@ -500,7 +478,6 @@ function closeAssignModal() {
   document.getElementById('assignProductModal').style.display = 'none';
 }
 
-// 3. Instant Product Assignment (Zero Delay)
 const assignProductForm = document.getElementById('assignProductForm');
 if (assignProductForm) {
   assignProductForm.addEventListener('submit', (e) => {
@@ -512,10 +489,8 @@ if (assignProductForm) {
     const [pName, pPrice] = productVal.split('|');
     const newItem = { productName: pName, price: Number(pPrice), date: new Date().toISOString() };
 
-    // 1. Instant Close Modal
     closeAssignModal();
 
-    // 2. Instant Local Cache & UI Update (0ms)
     const targetStudent = allStoreStudentsCache.find(s => s.id === studentId);
     if (targetStudent) {
       if (!targetStudent.storeItems) targetStudent.storeItems = [];
@@ -523,7 +498,6 @@ if (assignProductForm) {
       renderStoreStudentsTable(allStoreStudentsCache);
     }
 
-    // 3. Background Sync with Firestore
     db.collection('students').doc(studentId).update({
       storeItems: firebase.firestore.FieldValue.arrayUnion(newItem)
     }).catch(err => {
@@ -533,7 +507,7 @@ if (assignProductForm) {
   });
 }
 
-// --- Instant Modal Operations and Entity Mutations ---
+// --- Instant Modal Operations (Edit with Paid Fee Added) ---
 function openEditModal(student) {
   document.getElementById('editStudentId').value = student.id;
   document.getElementById('editName').value = student.name || '';
@@ -542,6 +516,7 @@ function openEditModal(student) {
   document.getElementById('editPassword').value = student.password || '';
   document.getElementById('editTotalFee').value = student.totalFee || 0;
   document.getElementById('editDiscount').value = student.discount || 0;
+  document.getElementById('editPaidFee').value = student.paidFee || 0;
 
   document.getElementById('editStudentModal').style.display = 'flex';
 }
@@ -550,7 +525,6 @@ function closeEditModal() {
   document.getElementById('editStudentModal').style.display = 'none';
 }
 
-// 4. Instant Student Edit Update (Zero Delay)
 async function updateStudentDatabase() {
   const id = document.getElementById('editStudentId').value;
   const newName = document.getElementById('editName').value.trim();
@@ -559,11 +533,10 @@ async function updateStudentDatabase() {
   const newPassword = document.getElementById('editPassword').value;
   const newTotalFee = Number(document.getElementById('editTotalFee').value);
   const newDiscount = Number(document.getElementById('editDiscount').value);
+  const newPaidFee = Number(document.getElementById('editPaidFee').value);
 
-  // 1. Instant Close Modal
   closeEditModal();
 
-  // 2. Instant Local State Mutation (0ms delay)
   const studentObj = allStudentsCache.find(s => s.id === id);
   if (studentObj) {
     studentObj.name = newName;
@@ -572,25 +545,25 @@ async function updateStudentDatabase() {
     studentObj.password = newPassword;
     studentObj.totalFee = newTotalFee;
     studentObj.discount = newDiscount;
+    studentObj.paidFee = newPaidFee; 
     
     updateSummaryMetrics(allStudentsCache);
     renderStudentsLedger(allStudentsCache);
   }
 
-  // Also update store cache name if present
   const storeStudentObj = allStoreStudentsCache.find(s => s.id === id);
   if (storeStudentObj) {
     storeStudentObj.name = newName;
   }
 
-  // 3. Background Sync with Database
   db.collection('students').doc(id).update({
     name: newName,
     admissionDate: newDate,
     email: newEmail,
     password: newPassword,
     totalFee: newTotalFee,
-    discount: newDiscount
+    discount: newDiscount,
+    paidFee: newPaidFee
   }).catch(error => {
     console.error(error);
     alert("Background sync failed. Please check internet connection.");
@@ -655,14 +628,12 @@ if (resultForm) {
 
     if (resultModalDialog) resultModalDialog.style.display = 'none';
 
-    // Instant local update
     const target = allStudentsCache.find(s => s.id === id);
     if (target) {
       target.result = newResult;
       renderStudentsLedger(allStudentsCache);
     }
 
-    // Background sync
     db.collection('students').doc(id).update({ result: newResult });
   });
 }
@@ -679,13 +650,76 @@ if (btnRemoveResult) {
         target.result = null;
         renderStudentsLedger(allStudentsCache);
       }
-
       db.collection('students').doc(id).update({ result: null });
     }
   });
 }
 
-// --- Sanitization and Error Translation Helpers ---
+// ============================================================
+// Certificate Generation Logic
+// ============================================================
+const certModal = document.getElementById('certModal');
+const certForm = document.getElementById('certForm');
+const certLinkResult = document.getElementById('certLinkResult');
+const certGeneratedLink = document.getElementById('certGeneratedLink');
+
+function closeCertModal() {
+  if (certModal) certModal.style.display = 'none';
+  if (certLinkResult) certLinkResult.style.display = 'none';
+}
+
+function openCertModal(student) {
+  document.getElementById('certStudentId').value = student.id;
+  document.getElementById('certStudentNameInput').value = student.name;
+  document.getElementById('certModalStudentName').textContent = `Issue to: ${student.name}`;
+  document.getElementById('certCourse').value = '';
+  
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('certDate').value = today;
+  
+  certLinkResult.style.display = 'none';
+  certModal.style.display = 'flex';
+}
+
+if (certForm) {
+  certForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = certForm.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.textContent = 'Generating...';
+
+    const sName = document.getElementById('certStudentNameInput').value;
+    const sCourse = document.getElementById('certCourse').value.trim();
+    const sDate = document.getElementById('certDate').value;
+    
+    // Generate Unique Certificate ID
+    const certId = 'CERT-' + Math.floor(100000 + Math.random() * 900000); 
+
+    try {
+      await db.collection('certificates').doc(certId).set({
+        studentName: sName,
+        courseName: sCourse,
+        issueDate: sDate,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      // Display the generated URL
+      const verifyLink = `https://perwezansari.github.io/verify.html?id=${certId}`;
+      certGeneratedLink.value = verifyLink;
+      certLinkResult.style.display = 'block';
+      
+      certGeneratedLink.select();
+      
+    } catch (error) {
+      alert("Error generating certificate: " + error.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Generate & Save Certificate';
+    }
+  });
+}
+
+// --- Sanitization and Helpers ---
 function formatAuthErrorMessage(code) {
   switch (code) {
     case 'auth/email-already-in-use': return 'The provided email is already registered.';

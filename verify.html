@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Verify Certificate — Shama Henna Classes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  .verify-box { text-align: left; background: #FCFAF7; padding: 15px; border-radius: 10px; margin-top: 15px; border: 1px solid #EFE6DD; }
+  .verify-row { margin-bottom: 8px; font-size: 14px; }
+  .verify-row span { color: #7A6E6D; font-weight: 600; font-size: 12px; text-transform: uppercase; display: block; }
+  .verify-row strong { color: #241A1B; font-size: 15px; }
+  .cert-valid { color: #1E7E34; font-weight: bold; font-size: 18px; display: flex; justify-content: center; align-items: center; gap: 5px; margin-bottom: 15px; }
+</style>
+</head>
+<body>
+
+<div class="auth-wrap">
+  <!-- Top Navigation Link to Student Portal -->
+  <div class="top-nav-link">
+    <a href="index.html" class="nav-switch-btn">🔐 Student Portal →</a>
+  </div>
+
+  <div class="auth-card" style="text-align: center;">
+    <div class="brand-header">
+      <img src="logo.png" alt="Logo" class="brand-logo" onerror="this.style.display='none'">
+      <h1 class="brand-title">Shama</h1>
+      <span class="brand-subtitle">HENNA CLASSES</span>
+    </div>
+    
+    <h2 style="text-align: center; margin-top: 15px;">Certificate Verification</h2>
+    
+    <div id="verifyContent" style="margin-top: 20px;">
+      <p class="muted">Scanning official database...</p>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+  // Extract Certificate ID from URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const certId = urlParams.get('id');
+  const verifyContent = document.getElementById('verifyContent');
+
+  if (!certId) {
+    verifyContent.innerHTML = `<p class="error">❌ Invalid QR Code. Certificate ID is missing.</p>`;
+  } else {
+    // Fetch certificate details from Firestore
+    db.collection('certificates').doc(certId).get().then((doc) => {
+      if (doc.exists) {
+        const data = doc.data();
+        verifyContent.innerHTML = `
+          <div class="cert-valid">✅ Verified Student</div>
+          <div class="verify-box">
+            <div class="verify-row"><span>Student Name</span><strong>${data.studentName}</strong></div>
+            <div class="verify-row"><span>Course Completed</span><strong>${data.courseName}</strong></div>
+            <div class="verify-row"><span>Issue Date</span><strong>${data.issueDate}</strong></div>
+            <div class="verify-row"><span>Certificate ID</span><strong>${certId}</strong></div>
+          </div>
+        `;
+      } else {
+        verifyContent.innerHTML = `<p class="error">❌ No matching certificate found in our official records.</p>`;
+      }
+    }).catch((error) => {
+      verifyContent.innerHTML = `<p class="error">⚠️ Network error. Please try again.</p>`;
+    });
+  }
+</script>
+</body>
+</html>
