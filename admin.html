@@ -4,9 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin Dashboard — Shama Henna Classes</title>
+<link rel="icon" type="image/png" href="logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<!-- Premium Animated Popups Library (SweetAlert2) -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
 
@@ -78,6 +81,8 @@
       </div>
       <form id="addStudentForm" class="grid-form">
         <div><label for="sName">Student Full Name</label><input type="text" id="sName" placeholder="e.g. Fatima Khan" required></div>
+        <!-- Naya Field: Batch -->
+        <div><label for="sBatch">Assigned Batch</label><input type="text" id="sBatch" placeholder="e.g. Batch A" required></div>
         <div><label for="sDate">Joining / Admission Date</label><input type="date" id="sDate" class="date-fix" required></div>
         <div><label for="sTotal">Total Course Fee (₹)</label><input type="number" id="sTotal" min="0" step="1" placeholder="e.g. 5000" required></div>
         <div><label for="sDiscount">Discount Given (₹)</label><input type="number" id="sDiscount" min="0" step="1" placeholder="0" value="0"></div>
@@ -93,8 +98,12 @@
       <div class="card-head">
         <h2>📋 Registered Students & Fee Records</h2>
       </div>
-      <div class="search-box">
-        <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search student by name or email ID...">
+      <!-- Naya Feature: Batch Dropdown Filter -->
+      <div class="search-box" style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search student by name or email ID..." style="flex: 2; min-width: 200px;">
+        <select id="batchFilter" class="search-input" style="flex: 1; min-width: 150px;">
+          <option value="ALL">All Batches</option>
+        </select>
       </div>
       <p id="permissionError" class="error" style="display:none;">Access restricted. Administrator credentials required.</p>
       <div class="table-wrap">
@@ -241,6 +250,9 @@
       <input type="hidden" id="editStudentId">
       <label>Name:</label>
       <input type="text" id="editName" class="modal-field" required>
+      <!-- Naya Field: Batch Edit -->
+      <label>Assigned Batch:</label>
+      <input type="text" id="editBatch" class="modal-field" required>
       <label>Admission Date:</label>
       <input type="date" id="editDate" class="date-fix modal-field" required>
       <label>Email (Login ID):</label>
@@ -272,7 +284,7 @@
     <form id="certForm">
       <input type="hidden" id="certStudentId">
       <input type="hidden" id="certStudentNameInput">
-      <!-- Naya Field: Track existing certificate -->
+      <!-- Track existing certificate -->
       <input type="hidden" id="existingCertId">
       
       <label>Certificate No.:</label>
@@ -284,6 +296,9 @@
       <input type="date" id="certDate" class="date-fix modal-field" required>
       
       <button type="submit" class="btn primary full">Generate & Save Certificate</button>
+      
+      <!-- Premium Delete Button in HTML -->
+      <button type="button" id="btnDeleteCert" class="btn danger full" style="margin-top: 10px; display: none;">🗑️ Revoke & Delete Certificate</button>
     </form>
     
     <div id="certLinkResult" class="modal-footer-actions" style="display:none; background: #E8F5E9; padding: 10px; border-radius: 8px; flex-direction: column;">

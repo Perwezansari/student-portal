@@ -102,10 +102,12 @@ async function fetchStudentProfile(uid) {
     const paidAmount = Number(dataPayload.paidFee) || 0;
     const dueAmount = Math.max(0, netPayableAmount - paidAmount);
     const formattedAdmissionDate = formatDisplayDate(dataPayload.admissionDate);
+    const displayBatch = dataPayload.batch || 'Batch A'; // Dashboard par dikhega
 
     if (dashboardContent) {
       dashboardContent.innerHTML = `
         <div class="info-row"><span>Student Name</span><strong class="name-value">${sanitizeOutput(dataPayload.name || '-')}</strong></div>
+        <div class="info-row"><span>Class Batch</span><strong style="color:var(--gold);">${sanitizeOutput(displayBatch)}</strong></div>
         <div class="info-row"><span>Admission Date</span><strong>${formattedAdmissionDate}</strong></div>
         <div class="info-row"><span>Total Course Fee</span><strong>₹${totalAmount.toLocaleString('en-IN')}</strong></div>
         <div class="info-row"><span>Discount Concession</span><strong class="gold-text">-₹${discountAmount.toLocaleString('en-IN')}</strong></div>
@@ -157,7 +159,7 @@ if (btnPrintReceipt) {
     const courseDue = Math.max(0, courseNet - coursePaid);
     
     const admissionDisplayDate = formatDisplayDate(studentRecord.admissionDate);
-    const currentPrintDate = new Date().toLocaleDateString('en-IN');
+    const currentPrintDate = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
     const documentWindow = window.open('', '_blank');
     if (!documentWindow) {
@@ -166,6 +168,7 @@ if (btnPrintReceipt) {
     }
 
     documentWindow.document.open();
+    // Yahan se Receipt par se Batch Name ko hide/remove kar diya gaya hai
     documentWindow.document.write(`
       <!DOCTYPE html>
       <html lang="en">
@@ -173,11 +176,13 @@ if (btnPrintReceipt) {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
         <title>Fee Receipt - ${sanitizeOutput(studentRecord.name || 'Student')}</title>
-        <link rel="stylesheet" href="style.css">
         <style>
           * { box-sizing: border-box; }
-          body { background: #FAF7F2; padding: 16px; display: flex; flex-direction: column; align-items: center; margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+          body { background: #FAF7F2; padding: 16px; display: flex; flex-direction: column; align-items: center; margin: 0; font-family: sans-serif; }
           .receipt-action-bar { width: 100%; max-width: 500px; display: flex; gap: 10px; margin-bottom: 16px; }
+          .btn { padding: 10px 16px; font-weight: bold; border: none; cursor: pointer; border-radius: 6px; }
+          .primary { background: #78202B; color: #fff; }
+          .ghost { background: transparent; border: 1px solid #EADBCC; color: #7A6E6D; }
           .receipt-card { width: 100%; max-width: 500px; background: #fff; border: 2px solid #C49A45; border-radius: 12px; padding: 24px 18px; }
           .receipt-header { text-align: center; border-bottom: 2px solid #F0EAE1; padding-bottom: 14px; margin-bottom: 18px; }
           .receipt-brand-title { color: #78202B; font-size: 22px; font-weight: 800; }
@@ -188,6 +193,8 @@ if (btnPrintReceipt) {
           .data-table th { background: #FAF7F2; padding: 8px 10px; text-align: left; font-size: 12px; color: #78202B; border-top: 1px solid #EADBCC; border-bottom: 1px solid #EADBCC; }
           .data-table td { padding: 9px 10px; border-bottom: 1px dashed #F0EAE1; }
           .text-right { text-align: right; }
+          .gold-text { color: #C49A45; }
+          .success { color: #1E7E34; }
           .due-row td { color: ${courseDue > 0 ? '#B22222' : '#2E7D32'}; font-weight: 800; font-size: 15px; border-top: 1.5px solid #EADBCC; border-bottom: 1.5px solid #EADBCC; background: #FFF9F9; }
           .receipt-footer { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 24px; }
           .receipt-badge { font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 4px; background: #E8F5E9; color: #2E7D32; }
@@ -201,7 +208,7 @@ if (btnPrintReceipt) {
       </head>
       <body>
         <div class="receipt-action-bar">
-          <button class="btn primary btn-flex-fill" onclick="window.print()">📥 Save as PDF / Print</button>
+          <button class="btn primary btn-flex-fill" style="flex:1;" onclick="window.print()">📥 Save as PDF / Print</button>
           <button class="btn ghost" onclick="window.close()">Close</button>
         </div>
         <div class="receipt-card">

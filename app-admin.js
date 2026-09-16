@@ -1,5 +1,5 @@
 // ============================================================
-// Admin Portal Core Application Logic
+// Admin Portal Core Application Logic (With Batch Management)
 // ============================================================
 
 const loginView = document.getElementById('loginView');
@@ -12,6 +12,7 @@ const addForm = document.getElementById('addStudentForm');
 const addStatus = document.getElementById('addStatus');
 const studentsBody = document.getElementById('studentsBody');
 const searchInput = document.getElementById('searchInput');
+const batchFilter = document.getElementById('batchFilter'); // Naya Batch Filter
 const searchStoreInput = document.getElementById('searchStoreInput');
 
 let allStudentsCache = [];
@@ -114,6 +115,29 @@ if (logoutBtn) {
   });
 }
 
+// --- Helper: Update Batch Dropdown ---
+function updateBatchDropdown() {
+  if (!batchFilter) return;
+  const currentVal = batchFilter.value;
+  // Get unique batches, default to 'Batch A' for old records without a batch
+  const uniqueBatches = [...new Set(allStudentsCache.map(s => s.batch || 'Batch A'))].sort();
+  
+  batchFilter.innerHTML = '<option value="ALL">All Batches</option>';
+  uniqueBatches.forEach(b => {
+    const opt = document.createElement('option');
+    opt.value = b;
+    opt.textContent = `📁 ${b}`;
+    batchFilter.appendChild(opt);
+  });
+  
+  // Preserve selection if it still exists
+  if (uniqueBatches.includes(currentVal) || currentVal === 'ALL') {
+    batchFilter.value = currentVal;
+  } else {
+    batchFilter.value = 'ALL';
+  }
+}
+
 // --- Student Registration Logic ---
 if (addForm) {
   addForm.addEventListener('submit', async (e) => {
@@ -126,6 +150,7 @@ if (addForm) {
     }
 
     const name = document.getElementById('sName').value.trim();
+    const batch = document.getElementById('sBatch').value.trim() || 'Batch A'; // Naya Data
     const admissionDate = document.getElementById('sDate').value;
     const totalFee = Number(document.getElementById('sTotal').value) || 0;
     const discount = Number(document.getElementById('sDiscount').value) || 0;
@@ -143,7 +168,7 @@ if (addForm) {
       secondaryApp = null;
 
       const newStudentData = {
-        name, admissionDate, totalFee, discount, paidFee,
+        name, batch, admissionDate, totalFee, discount, paidFee,
         email, password, result: null, storeItems: [], storePaid: 0
       };
 
@@ -161,8 +186,10 @@ if (addForm) {
       if (paidElem) paidElem.value = 0;
       
       allStudentsCache.push({ id: uid, ...newStudentData });
-      updateSummaryMetrics(allStudentsCache);
-      renderStudentsLedger(allStudentsCache);
+      updateBatchDropdown();
+      applyFilters(); // Re-render with new data
+      
+      if(typeof Swal !== 'undefined') Swal.fire({ title: 'Success!', text: 'Student enrolled successfully.', icon: 'success', timer: 2000, showConfirmButton: false });
     } catch (err) {
       if (addStatus) {
         addStatus.textContent = formatAuthErrorMessage(err.code) || 'Unable to register student.';
@@ -188,8 +215,8 @@ async function loadStudents() {
     snapshot.forEach((doc) => {
       allStudentsCache.push({ id: doc.id, ...doc.data() });
     });
-    updateSummaryMetrics(allStudentsCache);
-    renderStudentsLedger(allStudentsCache);
+    updateBatchDropdown();
+    applyFilters(); // Renders the filtered list
   } catch (err) {
     console.error(err);
     studentsBody.innerHTML = `<tr><td colspan="8" class="danger text-bold">Error loading records: ${err.message}</td></tr>`;
@@ -226,8 +253,12 @@ function updateSummaryMetrics(students) {
 
 function renderStudentsLedger(students) {
   if (!studentsBody) return;
+  
+  // Also update summary for currently filtered students
+  updateSummaryMetrics(students);
+
   if (students.length === 0) {
-    studentsBody.innerHTML = '<tr><td colspan="8" class="muted">No records available.</td></tr>';
+    studentsBody.innerHTML = '<tr><td colspan="8" class="muted">No records found for selected filter.</td></tr>';
     return;
   }
   studentsBody.innerHTML = '';
@@ -239,11 +270,13 @@ function renderStudentsLedger(students) {
     const net = Math.max(0, total - discount);
     const due = Math.max(0, net - paid);
     const serialNumber = index + 1;
+    const displayBatch = d.batch || 'Batch A'; // Default older records to Batch A
 
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>
         <strong>${serialNumber}. ${sanitizeOutput(d.name || '-')}</strong>
+        <div class="table-sub-email" style="color:var(--gold); font-weight:700;">🏷️ ${sanitizeOutput(displayBatch)}</div>
         <div class="table-sub-email">${sanitizeOutput(d.email || '')}</div>
         <div class="table-sub-pass">Pass: ${sanitizeOutput(d.password || 'N/A')}</div>
       </td>
@@ -276,9 +309,7 @@ function renderStudentsLedger(students) {
       if (valInput === '') return;
       const newPayment = Number(valInput) || 0;
       d.paidFee = paid + newPayment;
-      
-      updateSummaryMetrics(allStudentsCache);
-      renderStudentsLedger(allStudentsCache);
+      applyFilters();
       db.collection('students').doc(d.id).update({ paidFee: d.paidFee });
     });
 
@@ -286,47 +317,79 @@ function renderStudentsLedger(students) {
     tr.querySelector('.editBtn').addEventListener('click', () => { openEditModal(d); });
     tr.querySelector('.certBtn').addEventListener('click', () => { openCertModal(d); });
     
-    tr.querySelector('.removeBtn').addEventListener('click', async () => {
-      if (confirm(`Remove records for ${d.name}?`)) {
-        allStudentsCache = allStudentsCache.filter(s => s.id !== d.id);
-        updateSummaryMetrics(allStudentsCache);
-        renderStudentsLedger(allStudentsCache);
-        db.collection('students').doc(d.id).delete();
+    tr.querySelector('.removeBtn').addEventListener('click', () => {
+      if(typeof Swal !== 'undefined') {
+        Swal.fire({
+          title: 'Delete Student?',
+          text: `Remove records for ${d.name}? (Certificate will remain active)`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#B22222',
+          cancelButtonColor: '#7A6E6D',
+          confirmButtonText: 'Yes, delete it!'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            allStudentsCache = allStudentsCache.filter(s => s.id !== d.id);
+            updateBatchDropdown();
+            applyFilters();
+            db.collection('students').doc(d.id).delete();
+            Swal.fire('Deleted!', `${d.name}'s portal records have been removed.`, 'success');
+          }
+        });
+      } else {
+        if (confirm(`Remove records for ${d.name}?`)) {
+          allStudentsCache = allStudentsCache.filter(s => s.id !== d.id);
+          updateBatchDropdown();
+          applyFilters();
+          db.collection('students').doc(d.id).delete();
+        }
       }
     });
     studentsBody.appendChild(tr);
   });
 }
 
-// --- Store Inventory and Ledger Controllers ---
+// --- Master Search & Batch Filter Logic ---
+function applyFilters() {
+  const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+  const batch = batchFilter ? batchFilter.value : 'ALL';
+
+  const filtered = allStudentsCache.filter(s => {
+    const matchQuery = (s.name || '').toLowerCase().includes(query) || (s.email || '').toLowerCase().includes(query);
+    const matchBatch = (batch === 'ALL') || ((s.batch || 'Batch A') === batch);
+    return matchQuery && matchBatch;
+  });
+  renderStudentsLedger(filtered);
+}
+
+if (searchInput) {
+  searchInput.addEventListener('input', applyFilters);
+}
+
+if (batchFilter) {
+  batchFilter.addEventListener('change', applyFilters);
+}
+
+// --- Store Inventory & Ledgers ---
 const productsBody = document.getElementById('productsBody');
 const storeStudentsBody = document.getElementById('storeStudentsBody');
 const addProductForm = document.getElementById('addProductForm');
 
 async function loadStoreData() {
-  if (productsBody && allProductsCache.length === 0) {
-    productsBody.innerHTML = '<tr><td colspan="3" class="muted">Loading catalog...</td></tr>';
-  }
+  if (productsBody && allProductsCache.length === 0) productsBody.innerHTML = '<tr><td colspan="3" class="muted">Loading catalog...</td></tr>';
   try {
     const pSnap = await db.collection('products').orderBy('name').get();
     allProductsCache = [];
     pSnap.forEach((doc) => allProductsCache.push({ id: doc.id, ...doc.data() }));
     renderProductsTable();
-  } catch (err) {
-    if (productsBody) productsBody.innerHTML = `<tr><td colspan="3" class="danger">Error loading catalog.</td></tr>`;
-  }
-
-  if (storeStudentsBody && allStoreStudentsCache.length === 0) {
-    storeStudentsBody.innerHTML = '<tr><td colspan="6" class="muted">Loading store transactions...</td></tr>';
-  }
+  } catch (err) { }
+  if (storeStudentsBody && allStoreStudentsCache.length === 0) storeStudentsBody.innerHTML = '<tr><td colspan="6" class="muted">Loading store transactions...</td></tr>';
   try {
     const sSnap = await db.collection('students').orderBy('name').get();
     allStoreStudentsCache = [];
     sSnap.forEach((doc) => allStoreStudentsCache.push({ id: doc.id, ...doc.data() }));
     renderStoreStudentsTable(allStoreStudentsCache);
-  } catch (err) {
-    if (storeStudentsBody) storeStudentsBody.innerHTML = `<tr><td colspan="6" class="danger">Error loading transactions.</td></tr>`;
-  }
+  } catch (err) { }
 }
 
 if (addProductForm) {
@@ -341,86 +404,49 @@ if (addProductForm) {
       allProductsCache.push({ id: docRef.id, name, price });
       renderProductsTable();
       addProductForm.reset();
-    } catch (err) {
-      alert("Unable to save product.");
-    }
+      if(typeof Swal !== 'undefined') Swal.fire({ title: 'Added', text: 'Product added successfully', icon: 'success', timer: 1500, showConfirmButton: false });
+    } catch (err) {}
     if (btn) btn.disabled = false;
   });
 }
 
 function renderProductsTable() {
   if (!productsBody) return;
-  if (allProductsCache.length === 0) {
-    productsBody.innerHTML = '<tr><td colspan="3" class="muted">Inventory catalog is empty.</td></tr>';
-    return;
-  }
-  productsBody.innerHTML = '';
+  productsBody.innerHTML = allProductsCache.length === 0 ? '<tr><td colspan="3" class="muted">Inventory catalog is empty.</td></tr>' : '';
   allProductsCache.forEach((p) => {
     const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td class="text-bold">${sanitizeOutput(p.name)}</td>
-      <td>₹${p.price}</td>
-      <td><button class="btn small danger" onclick="deleteProduct('${p.id}', '${sanitizeOutput(p.name)}')">Delete</button></td>
-    `;
+    tr.innerHTML = `<td class="text-bold">${sanitizeOutput(p.name)}</td><td>₹${p.price}</td><td><button class="btn small danger" onclick="deleteProduct('${p.id}', '${sanitizeOutput(p.name)}')">Delete</button></td>`;
     productsBody.appendChild(tr);
   });
 }
 
 async function deleteProduct(id, name) {
-  if (confirm(`Delete ${name} from inventory?`)) {
-    allProductsCache = allProductsCache.filter(p => p.id !== id);
-    renderProductsTable();
-    db.collection('products').doc(id).delete();
+  if(typeof Swal !== 'undefined') {
+    Swal.fire({ title: 'Delete Product?', text: `Remove ${name}?`, icon: 'warning', showCancelButton: true, confirmButtonColor: '#B22222', confirmButtonText: 'Yes, delete it!' })
+      .then((result) => { if (result.isConfirmed) { allProductsCache = allProductsCache.filter(p => p.id !== id); renderProductsTable(); db.collection('products').doc(id).delete(); } });
+  } else {
+    if(confirm(`Remove ${name}?`)) { allProductsCache = allProductsCache.filter(p => p.id !== id); renderProductsTable(); db.collection('products').doc(id).delete(); }
   }
 }
 
 function renderStoreStudentsTable(students) {
   if (!storeStudentsBody) return;
-  if (students.length === 0) {
-    storeStudentsBody.innerHTML = '<tr><td colspan="6" class="muted">No student ledger data found.</td></tr>';
-    return;
-  }
-  storeStudentsBody.innerHTML = '';
-
+  storeStudentsBody.innerHTML = students.length === 0 ? '<tr><td colspan="6" class="muted">No student ledger data found.</td></tr>' : '';
   students.forEach((student, index) => {
     const items = student.storeItems || [];
     const existingStorePaid = Number(student.storePaid) || 0;
-    
     let storeTotalBill = 0;
     items.forEach(i => storeTotalBill += Number(i.price));
     const storeDue = Math.max(0, storeTotalBill - existingStorePaid);
-
-    let itemsText = '';
-    if (items.length > 0) {
-      itemsText = items.map((item, itemIdx) => `
-        <span class="store-item-badge" style="display:inline-flex; align-items:center; background:#F8F4EE; border:1px solid #EADBCC; padding:4px 10px; border-radius:20px; font-size:11.5px; font-weight:600; margin:3px; color:var(--primary);">
-          ${sanitizeOutput(item.productName)} <span style="opacity:0.65; font-weight:500; margin-left:3px;">(₹${item.price})</span>
-          <button type="button" class="removeStoreItemBtn" data-student-id="${student.id}" data-item-index="${itemIdx}" style="background:transparent; border:none; color:#B22222; font-weight:bold; cursor:pointer; font-size:15px; margin-left:6px; padding:0; line-height:1; display:flex; align-items:center; opacity:0.6; transition:0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'" title="Remove Item">×</button>
-        </span>
-      `).join('');
-    } else {
-      itemsText = '<span class="muted table-text-muted">No items</span>';
-    }
+    let itemsText = items.length > 0 ? items.map((item, itemIdx) => `<span class="store-item-badge" style="display:inline-flex; align-items:center; background:#F8F4EE; border:1px solid #EADBCC; padding:4px 10px; border-radius:20px; font-size:11.5px; font-weight:600; margin:3px; color:var(--primary);">${sanitizeOutput(item.productName)} <span style="opacity:0.65; font-weight:500; margin-left:3px;">(₹${item.price})</span><button type="button" class="removeStoreItemBtn" data-student-id="${student.id}" data-item-index="${itemIdx}" style="background:transparent; border:none; color:#B22222; font-weight:bold; cursor:pointer; font-size:15px; margin-left:6px; padding:0; line-height:1; display:flex; align-items:center; opacity:0.6; transition:0.2s;">×</button></span>`).join('') : '<span class="muted table-text-muted">No items</span>';
 
     const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><strong>${index + 1}. ${sanitizeOutput(student.name)}</strong></td>
-      <td>${itemsText}</td>
-      <td class="text-bold">₹${storeTotalBill}</td>
-      <td class="success text-bold">₹${existingStorePaid}</td>
-      <td class="${storeDue > 0 ? 'danger' : 'success'} text-bold">₹${storeDue}</td>
-      <td>
-        <input type="number" class="storePaidInput input-ledger-action" min="0" step="1" placeholder="+ Add ₹">
-        <button class="btn small primary storeUpdateBtn" title="Add Payment">Add</button>
-        <button class="btn small ghost assignBtn" title="Assign Item">🛍️ Assign</button>
-      </td>
-    `;
-
+    tr.innerHTML = `<td><strong>${index + 1}. ${sanitizeOutput(student.name)}</strong></td><td>${itemsText}</td><td class="text-bold">₹${storeTotalBill}</td><td class="success text-bold">₹${existingStorePaid}</td><td class="${storeDue > 0 ? 'danger' : 'success'} text-bold">₹${storeDue}</td><td><input type="number" class="storePaidInput input-ledger-action" min="0" step="1" placeholder="+ Add ₹"><button class="btn small primary storeUpdateBtn" title="Add Payment">Add</button> <button class="btn small ghost assignBtn" title="Assign Item">🛍️ Assign</button></td>`;
+    
     tr.querySelector('.storeUpdateBtn').addEventListener('click', () => {
       const valInput = tr.querySelector('.storePaidInput').value;
       if (valInput === '') return;
-      const newPayment = Number(valInput) || 0;
-      student.storePaid = existingStorePaid + newPayment;
+      student.storePaid = existingStorePaid + (Number(valInput) || 0);
       renderStoreStudentsTable(allStoreStudentsCache);
       db.collection('students').doc(student.id).update({ storePaid: student.storePaid });
     });
@@ -429,55 +455,32 @@ function renderStoreStudentsTable(students) {
       btn.addEventListener('click', () => {
         const sId = btn.getAttribute('data-student-id');
         const idx = Number(btn.getAttribute('data-item-index'));
-        
-        if (confirm('Remove this product from student account?')) {
-          const targetStudent = allStoreStudentsCache.find(s => s.id === sId);
-          if (targetStudent && targetStudent.storeItems) {
-            targetStudent.storeItems.splice(idx, 1);
-            if (targetStudent.storeItems.length === 0) {
-              targetStudent.storePaid = 0; 
-            }
-            renderStoreStudentsTable(allStoreStudentsCache);
-            db.collection('students').doc(sId).update({ 
-              storeItems: targetStudent.storeItems,
-              storePaid: targetStudent.storePaid 
-            });
-          }
-        }
+        const action = () => { const t = allStoreStudentsCache.find(s => s.id === sId); if(t && t.storeItems) { t.storeItems.splice(idx, 1); if(t.storeItems.length === 0) t.storePaid = 0; renderStoreStudentsTable(allStoreStudentsCache); db.collection('students').doc(sId).update({ storeItems: t.storeItems, storePaid: t.storePaid }); } };
+        if(typeof Swal !== 'undefined') Swal.fire({ title: 'Remove Item?', text: 'Remove from account?', icon: 'question', showCancelButton: true, confirmButtonColor: '#C49A45', confirmButtonText: 'Yes' }).then((r) => { if(r.isConfirmed) action(); });
+        else if (confirm('Remove this product?')) action();
       });
     });
-
-    tr.querySelector('.assignBtn').addEventListener('click', () => {
-      openAssignModal(student);
-    });
-
+    tr.querySelector('.assignBtn').addEventListener('click', () => { openAssignModal(student); });
     storeStudentsBody.appendChild(tr);
   });
 }
 
 function openAssignModal(student) {
   if (allProductsCache.length === 0) {
-    alert('Please register inventory items before assigning.');
+    if(typeof Swal !== 'undefined') Swal.fire('Notice', 'Register inventory items first.', 'info');
+    else alert('Register inventory items first.');
     return;
   }
   document.getElementById('assignStudentId').value = student.id;
   document.getElementById('assignModalStudentName').textContent = `Assign to: ${student.name}`;
-
   const select = document.getElementById('assignProductSelect');
   select.innerHTML = '<option value="">-- Select Product --</option>';
   allProductsCache.forEach((p) => {
-    const opt = document.createElement('option');
-    opt.value = `${p.name}|${p.price}`;
-    opt.textContent = `${p.name} - ₹${p.price}`;
-    select.appendChild(opt);
+    const opt = document.createElement('option'); opt.value = `${p.name}|${p.price}`; opt.textContent = `${p.name} - ₹${p.price}`; select.appendChild(opt);
   });
-
   document.getElementById('assignProductModal').style.display = 'flex';
 }
-
-function closeAssignModal() {
-  document.getElementById('assignProductModal').style.display = 'none';
-}
+function closeAssignModal() { document.getElementById('assignProductModal').style.display = 'none'; }
 
 const assignProductForm = document.getElementById('assignProductForm');
 if (assignProductForm) {
@@ -486,51 +489,45 @@ if (assignProductForm) {
     const studentId = document.getElementById('assignStudentId').value;
     const productVal = document.getElementById('assignProductSelect').value;
     if (!productVal) return;
-
     const [pName, pPrice] = productVal.split('|');
     const newItem = { productName: pName, price: Number(pPrice), date: new Date().toISOString() };
-
     closeAssignModal();
-
     const targetStudent = allStoreStudentsCache.find(s => s.id === studentId);
-    if (targetStudent) {
-      if (!targetStudent.storeItems) targetStudent.storeItems = [];
-      targetStudent.storeItems.push(newItem);
-      renderStoreStudentsTable(allStoreStudentsCache);
-    }
-
-    db.collection('students').doc(studentId).update({
-      storeItems: firebase.firestore.FieldValue.arrayUnion(newItem)
-    }).catch(err => {
-      console.error(err);
-      alert('Failed to sync changes.');
+    if (targetStudent) { if (!targetStudent.storeItems) targetStudent.storeItems = []; targetStudent.storeItems.push(newItem); renderStoreStudentsTable(allStoreStudentsCache); }
+    db.collection('students').doc(studentId).update({ storeItems: firebase.firestore.FieldValue.arrayUnion(newItem) }).catch(err => {
+      if(typeof Swal !== 'undefined') Swal.fire('Error', 'Failed to sync.', 'error'); else alert('Failed to sync.');
     });
   });
 }
 
-// --- Dynamic Entity Update (Includes Editable Paid Fee) ---
+if (searchStoreInput) {
+  searchStoreInput.addEventListener('input', (e) => {
+    const query = e.target.value.toLowerCase().trim();
+    const filtered = allStoreStudentsCache.filter((s) => (s.name || '').toLowerCase().includes(query));
+    renderStoreStudentsTable(filtered);
+  });
+}
+
+// --- Dynamic Entity Update (Includes Editable Batch) ---
 function openEditModal(student) {
   document.getElementById('editStudentId').value = student.id;
   document.getElementById('editName').value = student.name || '';
+  document.getElementById('editBatch').value = student.batch || 'Batch A'; // Batch Edit
   document.getElementById('editDate').value = student.admissionDate || '';
   document.getElementById('editEmail').value = student.email || '';
   document.getElementById('editPassword').value = student.password || '';
   document.getElementById('editTotalFee').value = student.totalFee || 0;
   document.getElementById('editDiscount').value = student.discount || 0;
-  
-  // Populate existing paid fee for manual correction
   document.getElementById('editPaidFee').value = student.paidFee || 0;
-
   document.getElementById('editStudentModal').style.display = 'flex';
 }
 
-function closeEditModal() {
-  document.getElementById('editStudentModal').style.display = 'none';
-}
+function closeEditModal() { document.getElementById('editStudentModal').style.display = 'none'; }
 
 async function updateStudentDatabase() {
   const id = document.getElementById('editStudentId').value;
   const newName = document.getElementById('editName').value.trim();
+  const newBatch = document.getElementById('editBatch').value.trim() || 'Batch A';
   const newDate = document.getElementById('editDate').value;
   const newEmail = document.getElementById('editEmail').value.trim();
   const newPassword = document.getElementById('editPassword').value;
@@ -543,6 +540,7 @@ async function updateStudentDatabase() {
   const studentObj = allStudentsCache.find(s => s.id === id);
   if (studentObj) {
     studentObj.name = newName;
+    studentObj.batch = newBatch;
     studentObj.admissionDate = newDate;
     studentObj.email = newEmail;
     studentObj.password = newPassword;
@@ -550,47 +548,18 @@ async function updateStudentDatabase() {
     studentObj.discount = newDiscount;
     studentObj.paidFee = newPaidFee; 
     
-    updateSummaryMetrics(allStudentsCache);
-    renderStudentsLedger(allStudentsCache);
+    updateBatchDropdown();
+    applyFilters();
   }
-
   const storeStudentObj = allStoreStudentsCache.find(s => s.id === id);
-  if (storeStudentObj) {
-    storeStudentObj.name = newName;
-  }
+  if (storeStudentObj) storeStudentObj.name = newName;
 
   db.collection('students').doc(id).update({
-    name: newName,
-    admissionDate: newDate,
-    email: newEmail,
-    password: newPassword,
-    totalFee: newTotalFee,
-    discount: newDiscount,
-    paidFee: newPaidFee
+    name: newName, batch: newBatch, admissionDate: newDate, email: newEmail, password: newPassword, totalFee: newTotalFee, discount: newDiscount, paidFee: newPaidFee
+  }).then(() => {
+    if(typeof Swal !== 'undefined') Swal.fire({ title: 'Updated!', text: 'Records updated.', icon: 'success', timer: 1500, showConfirmButton: false });
   }).catch(error => {
-    console.error(error);
-    alert("Background sync failed. Please check your internet connection.");
-  });
-}
-
-// --- Search Filter Capabilities ---
-if (searchInput) {
-  searchInput.addEventListener('input', (e) => {
-    const query = e.target.value.toLowerCase().trim();
-    const filtered = allStudentsCache.filter((s) => {
-      return (s.name || '').toLowerCase().includes(query) || (s.email || '').toLowerCase().includes(query);
-    });
-    renderStudentsLedger(filtered);
-  });
-}
-
-if (searchStoreInput) {
-  searchStoreInput.addEventListener('input', (e) => {
-    const query = e.target.value.toLowerCase().trim();
-    const filtered = allStoreStudentsCache.filter((s) => {
-      return (s.name || '').toLowerCase().includes(query);
-    });
-    renderStoreStudentsTable(filtered);
+    if(typeof Swal !== 'undefined') Swal.fire('Error', "Sync failed.", 'error');
   });
 }
 
@@ -611,33 +580,20 @@ function openResultEditor(student) {
 }
 
 const closeResultModalBtn = document.getElementById('closeResultModal');
-if (closeResultModalBtn) {
-  closeResultModalBtn.addEventListener('click', () => {
-    if (resultModalDialog) resultModalDialog.style.display = 'none';
-  });
-}
+if (closeResultModalBtn) { closeResultModalBtn.addEventListener('click', () => { if (resultModalDialog) resultModalDialog.style.display = 'none'; }); }
 
 const resultForm = document.getElementById('resultForm');
 if (resultForm) {
   resultForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const id = document.getElementById('resultStudentId').value;
-    const newResult = {
-      marks: document.getElementById('rMarks').value.trim(),
-      grade: document.getElementById('rGrade').value.trim().toUpperCase(),
-      status: document.getElementById('rStatus').value,
-      isPublished: true
-    };
-
+    const newResult = { marks: document.getElementById('rMarks').value.trim(), grade: document.getElementById('rGrade').value.trim().toUpperCase(), status: document.getElementById('rStatus').value, isPublished: true };
     if (resultModalDialog) resultModalDialog.style.display = 'none';
-
     const target = allStudentsCache.find(s => s.id === id);
-    if (target) {
-      target.result = newResult;
-      renderStudentsLedger(allStudentsCache);
-    }
-
-    db.collection('students').doc(id).update({ result: newResult });
+    if (target) { target.result = newResult; applyFilters(); }
+    db.collection('students').doc(id).update({ result: newResult }).then(() => {
+      if(typeof Swal !== 'undefined') Swal.fire({ title: 'Published!', text: 'Result saved.', icon: 'success', timer: 1500, showConfirmButton: false });
+    });
   });
 }
 
@@ -645,26 +601,26 @@ const btnRemoveResult = document.getElementById('btnRemoveResult');
 if (btnRemoveResult) {
   btnRemoveResult.addEventListener('click', () => {
     const id = document.getElementById('resultStudentId').value;
-    if (confirm('Unpublish and clear examination results for this student?')) {
+    const action = () => {
       if (resultModalDialog) resultModalDialog.style.display = 'none';
-
       const target = allStudentsCache.find(s => s.id === id);
-      if (target) {
-        target.result = null;
-        renderStudentsLedger(allStudentsCache);
-      }
+      if (target) { target.result = null; applyFilters(); }
       db.collection('students').doc(id).update({ result: null });
-    }
+      if(typeof Swal !== 'undefined') Swal.fire('Cleared!', 'Result unpublished.', 'success');
+    };
+    if(typeof Swal !== 'undefined') Swal.fire({ title: 'Unpublish Result?', text: 'Clear results?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#B22222', confirmButtonText: 'Yes' }).then((r) => { if(r.isConfirmed) action(); });
+    else if (confirm('Clear examination results?')) action();
   });
 }
 
 // ============================================================
-// Certificate Generation Logic (Smart Edit & Dynamic Domain)
+// Certificate Generation Logic (Smart Edit & Delete)
 // ============================================================
 const certModal = document.getElementById('certModal');
 const certForm = document.getElementById('certForm');
 const certLinkResult = document.getElementById('certLinkResult');
 const certGeneratedLink = document.getElementById('certGeneratedLink');
+const btnDeleteCert = document.getElementById('btnDeleteCert');
 
 function closeCertModal() {
   if (certModal) certModal.style.display = 'none';
@@ -677,11 +633,10 @@ function openCertModal(student) {
   document.getElementById('certModalStudentName').textContent = `Issue to: ${student.name}`;
   
   const submitBtn = certForm.querySelector('button[type="submit"]');
+  const existIdInput = document.getElementById('existingCertId');
 
-  // Check if student already has a certificate
   if (student.certificate) {
-    // EDIT MODE: Purani details form mein daal do
-    document.getElementById('existingCertId').value = student.certificate.id;
+    if (existIdInput) existIdInput.value = student.certificate.id;
     document.getElementById('certNumber').value = student.certificate.certNumber || '';
     document.getElementById('certCourse').value = student.certificate.courseName || '';
     document.getElementById('certDate').value = student.certificate.issueDate || '';
@@ -689,17 +644,17 @@ function openCertModal(student) {
     certGeneratedLink.value = student.certificate.url || '';
     certLinkResult.style.display = 'flex';
     if (submitBtn) submitBtn.textContent = 'Update Certificate';
+    if (btnDeleteCert) btnDeleteCert.style.display = 'block';
   } else {
-    // NEW MODE: Form khali rakho
-    document.getElementById('existingCertId').value = '';
+    if (existIdInput) existIdInput.value = '';
     document.getElementById('certNumber').value = '';
     document.getElementById('certCourse').value = '';
     document.getElementById('certDate').value = new Date().toISOString().split('T')[0];
     
     certLinkResult.style.display = 'none';
     if (submitBtn) submitBtn.textContent = 'Generate & Save Certificate';
+    if (btnDeleteCert) btnDeleteCert.style.display = 'none';
   }
-  
   certModal.style.display = 'flex';
 }
 
@@ -715,62 +670,37 @@ if (certForm) {
     const rawCertNo = document.getElementById('certNumber').value.trim();
     const sCourse = document.getElementById('certCourse').value.trim();
     const sDate = document.getElementById('certDate').value;
-    const existingId = document.getElementById('existingCertId').value;
+    
+    const existIdInput = document.getElementById('existingCertId');
+    const existingId = existIdInput ? existIdInput.value : '';
     
     const generateSecureId = () => {
       const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-      let randomStr = '';
-      for (let i = 0; i < 16; i++) {
-        randomStr += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-      return 'VERIFY-' + randomStr; 
+      let r = ''; for (let i = 0; i < 16; i++) r += chars.charAt(Math.floor(Math.random() * chars.length)); return 'VERIFY-' + r; 
     };
-    
-    // Agar purana ID hai to wo use karo, nahi to naya banao
     const secureDocId = existingId ? existingId : generateSecureId();
 
     try {
-      // 🌟 DYNAMIC DOMAIN RESOLVER (No hardcoded URL)
-      // Yeh automatically current domain detect kar lega (github.io ho ya official .com)
       const baseUrl = window.location.href.split('/').slice(0, -1).join('/');
       const verifyLink = `${baseUrl}/verify.html?id=${secureDocId}`;
 
-      // 1. Certificate Database update karo
-      await db.collection('certificates').doc(secureDocId).set({
-        certNumber: rawCertNo, 
-        studentName: sName,
-        courseName: sCourse,
-        issueDate: sDate,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-      });
+      await db.collection('certificates').doc(secureDocId).set({ certNumber: rawCertNo, studentName: sName, courseName: sCourse, issueDate: sDate, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
 
-      // 2. Student Data ko Certificate ke sath link karo (Taki next time edit ho sake)
-      const certDataObj = {
-        id: secureDocId,
-        certNumber: rawCertNo,
-        courseName: sCourse,
-        issueDate: sDate,
-        url: verifyLink
-      };
+      const certDataObj = { id: secureDocId, certNumber: rawCertNo, courseName: sCourse, issueDate: sDate, url: verifyLink };
+      await db.collection('students').doc(studentId).update({ certificate: certDataObj });
 
-      await db.collection('students').doc(studentId).update({
-        certificate: certDataObj
-      });
-
-      // 3. Local Web Cache update karo
       const targetStudent = allStudentsCache.find(s => s.id === studentId);
-      if (targetStudent) {
-        targetStudent.certificate = certDataObj;
-      }
+      if (targetStudent) targetStudent.certificate = certDataObj;
       
-      // 4. UI Update
-      document.getElementById('existingCertId').value = secureDocId;
+      if (existIdInput) existIdInput.value = secureDocId;
       certGeneratedLink.value = verifyLink;
       certLinkResult.style.display = 'flex';
       certGeneratedLink.select();
+      if (btnDeleteCert) btnDeleteCert.style.display = 'block';
       
+      if(typeof Swal !== 'undefined') Swal.fire({ title: 'Success!', text: 'Certificate saved.', icon: 'success', timer: 1500, showConfirmButton: false });
     } catch (error) {
-      alert("System Error: Unable to process certificate. " + error.message);
+      if(typeof Swal !== 'undefined') Swal.fire('Error', "Process failed: " + error.message, 'error'); else alert("Error: " + error.message);
     } finally {
       btn.disabled = false;
       btn.textContent = existingId ? 'Update Certificate' : 'Generate & Save Certificate';
@@ -778,16 +708,44 @@ if (certForm) {
   });
 }
 
-// --- Core Utility Functions ---
+if (btnDeleteCert) {
+  btnDeleteCert.addEventListener('click', () => {
+    const studentId = document.getElementById('certStudentId').value;
+    const existingId = document.getElementById('existingCertId').value;
+
+    const action = async () => {
+      btnDeleteCert.textContent = "Deleting...";
+      try {
+        await db.collection('certificates').doc(existingId).delete();
+        await db.collection('students').doc(studentId).update({ certificate: firebase.firestore.FieldValue.delete() });
+        const targetStudent = allStudentsCache.find(s => s.id === studentId);
+        if (targetStudent) delete targetStudent.certificate;
+        closeCertModal();
+        if(typeof Swal !== 'undefined') Swal.fire('Revoked!', 'Certificate deleted.', 'success'); else alert('Certificate deleted.');
+      } catch (error) {
+        if(typeof Swal !== 'undefined') Swal.fire('Error', error.message, 'error'); else alert(error.message);
+      } finally {
+        btnDeleteCert.textContent = "🗑️ Revoke & Delete Certificate";
+      }
+    };
+
+    if(typeof Swal !== 'undefined') {
+      Swal.fire({ title: 'Revoke Certificate?', text: "Permanent Action! QR will stop working.", icon: 'warning', showCancelButton: true, confirmButtonColor: '#B22222', confirmButtonText: 'Yes, Revoke it!' }).then((result) => { if (result.isConfirmed) action(); });
+    } else {
+      if(confirm("QR Code will stop working permanently. Proceed?")) action();
+    }
+  });
+}
+
 function formatAuthErrorMessage(code) {
   switch (code) {
-    case 'auth/email-already-in-use': return 'The provided email is already registered in the system.';
-    case 'auth/invalid-email': return 'Malformed email address provided.';
-    case 'auth/weak-password': return 'Password must be a minimum of 6 characters.';
+    case 'auth/email-already-in-use': return 'Email already registered.';
+    case 'auth/invalid-email': return 'Malformed email address.';
+    case 'auth/weak-password': return 'Password must be min 6 characters.';
     case 'auth/user-not-found':
     case 'auth/wrong-password':
-    case 'auth/invalid-credential': return 'Invalid login credentials.';
-    default: return 'Unable to process the authentication request at this time.';
+    case 'auth/invalid-credential': return 'Invalid credentials.';
+    default: return 'Authentication failed.';
   }
 }
 
