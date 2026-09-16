@@ -16,7 +16,7 @@
 <!-- Administrator Authentication View -->
 <div id="loginView" class="auth-wrap">
   <div class="top-nav-link">
-    <a href="index.html" class="nav-switch-btn"> Student Portal →</a>
+    <a href="index.html" class="nav-switch-btn">👨‍🎓 Student Portal →</a>
   </div>
   <form id="loginForm" class="auth-card">
     <div class="brand-header">
@@ -81,7 +81,6 @@
       </div>
       <form id="addStudentForm" class="grid-form">
         <div><label for="sName">Student Full Name</label><input type="text" id="sName" placeholder="e.g. Fatima Khan" required></div>
-        <!-- Naya Field: Batch -->
         <div><label for="sBatch">Assigned Batch</label><input type="text" id="sBatch" placeholder="e.g. Batch A" required></div>
         <div><label for="sDate">Joining / Admission Date</label><input type="date" id="sDate" class="date-fix" required></div>
         <div><label for="sTotal">Total Course Fee (₹)</label><input type="number" id="sTotal" min="0" step="1" placeholder="e.g. 5000" required></div>
@@ -98,7 +97,7 @@
       <div class="card-head">
         <h2>📋 Registered Students & Fee Records</h2>
       </div>
-      <!-- Naya Feature: Batch Dropdown Filter -->
+      <!-- Batch Dropdown Filter -->
       <div class="search-box" style="display: flex; gap: 10px; flex-wrap: wrap;">
         <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search student by name or email ID..." style="flex: 2; min-width: 200px;">
         <select id="batchFilter" class="search-input" style="flex: 1; min-width: 150px;">
@@ -173,8 +172,12 @@
       <div class="card-head">
         <h2>👩‍🎓 Student Store Records</h2>
       </div>
-      <div class="search-box">
-        <input type="text" id="searchStoreInput" class="search-input" placeholder="🔍 Search student by name in store...">
+      <!-- NAYA FEATURE: Store Dashboard mein bhi Batch Filter -->
+      <div class="search-box" style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <input type="text" id="searchStoreInput" class="search-input" placeholder="🔍 Search student by name in store..." style="flex: 2; min-width: 200px;">
+        <select id="storeBatchFilter" class="search-input" style="flex: 1; min-width: 150px;">
+          <option value="ALL">All Batches</option>
+        </select>
       </div>
       <div class="table-wrap">
         <table>
@@ -250,7 +253,6 @@
       <input type="hidden" id="editStudentId">
       <label>Name:</label>
       <input type="text" id="editName" class="modal-field" required>
-      <!-- Naya Field: Batch Edit -->
       <label>Assigned Batch:</label>
       <input type="text" id="editBatch" class="modal-field" required>
       <label>Admission Date:</label>
@@ -284,7 +286,6 @@
     <form id="certForm">
       <input type="hidden" id="certStudentId">
       <input type="hidden" id="certStudentNameInput">
-      <!-- Track existing certificate -->
       <input type="hidden" id="existingCertId">
       
       <label>Certificate No.:</label>
@@ -297,7 +298,6 @@
       
       <button type="submit" class="btn primary full">Generate & Save Certificate</button>
       
-      <!-- Premium Delete Button in HTML -->
       <button type="button" id="btnDeleteCert" class="btn danger full" style="margin-top: 10px; display: none;">🗑️ Revoke & Delete Certificate</button>
     </form>
     

@@ -1,6 +1,13 @@
 // ============================================================
-// Admin Portal Core Application Logic (With Batch Management)
+// Admin Portal Core Application Logic (With Batch & Premium Animations)
 // ============================================================
+
+// Dynamically inject SweetAlert2 so admin.html doesn't need changes if missing
+if (typeof Swal === 'undefined') {
+  const script = document.createElement('script');
+  script.src = "https://cdn.jsdelivr.net/npm/sweetalert2@11";
+  document.head.appendChild(script);
+}
 
 const loginView = document.getElementById('loginView');
 const dashboardView = document.getElementById('dashboardView');
@@ -12,8 +19,9 @@ const addForm = document.getElementById('addStudentForm');
 const addStatus = document.getElementById('addStatus');
 const studentsBody = document.getElementById('studentsBody');
 const searchInput = document.getElementById('searchInput');
-const batchFilter = document.getElementById('batchFilter'); // Naya Batch Filter
+const batchFilter = document.getElementById('batchFilter'); 
 const searchStoreInput = document.getElementById('searchStoreInput');
+const storeBatchFilter = document.getElementById('storeBatchFilter'); // Naya Store Batch Filter
 
 let allStudentsCache = [];
 let allProductsCache = []; 
@@ -108,33 +116,61 @@ loginForm.addEventListener('submit', async (e) => {
   }
 });
 
+// NAYA: Animated Logout Confirmation
 if (logoutBtn) {
-  logoutBtn.addEventListener('click', async () => {
-    resetAdminLoginForm();
-    await auth.signOut();
+  logoutBtn.addEventListener('click', () => {
+    if(typeof Swal !== 'undefined') {
+      Swal.fire({
+        title: 'Logout?',
+        text: "Are you sure you want to exit the admin panel?",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#78202B',
+        cancelButtonColor: '#7A6E6D',
+        confirmButtonText: 'Yes, Logout'
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          resetAdminLoginForm();
+          await auth.signOut();
+        }
+      });
+    } else {
+      if(confirm('Are you sure you want to exit?')){
+        resetAdminLoginForm();
+        auth.signOut();
+      }
+    }
   });
 }
 
-// --- Helper: Update Batch Dropdown ---
+// --- Helper: Update Batch Dropdowns ---
 function updateBatchDropdown() {
-  if (!batchFilter) return;
-  const currentVal = batchFilter.value;
-  // Get unique batches, default to 'Batch A' for old records without a batch
   const uniqueBatches = [...new Set(allStudentsCache.map(s => s.batch || 'Batch A'))].sort();
   
-  batchFilter.innerHTML = '<option value="ALL">All Batches</option>';
-  uniqueBatches.forEach(b => {
-    const opt = document.createElement('option');
-    opt.value = b;
-    opt.textContent = `📁 ${b}`;
-    batchFilter.appendChild(opt);
-  });
-  
-  // Preserve selection if it still exists
-  if (uniqueBatches.includes(currentVal) || currentVal === 'ALL') {
-    batchFilter.value = currentVal;
-  } else {
-    batchFilter.value = 'ALL';
+  // 1. Main Dashboard Batch Filter
+  if (batchFilter) {
+    const currentVal = batchFilter.value;
+    batchFilter.innerHTML = '<option value="ALL">All Batches</option>';
+    uniqueBatches.forEach(b => {
+      const opt = document.createElement('option');
+      opt.value = b;
+      opt.textContent = `📁 ${b}`;
+      batchFilter.appendChild(opt);
+    });
+    batchFilter.value = (uniqueBatches.includes(currentVal) || currentVal === 'ALL') ? currentVal : 'ALL';
+  }
+
+  // 2. Store Dashboard Batch Filter
+  if (storeBatchFilter) {
+    const currentStoreVal = storeBatchFilter.value;
+    storeBatchFilter.innerHTML = '<option value="ALL">All Batches</option>';
+    uniqueBatches.forEach(b => {
+      const opt = document.createElement('option');
+      opt.value = b;
+      opt.textContent = `📁 ${b}`;
+      storeBatchFilter.appendChild(opt);
+    });
+    storeBatchFilter.value = (uniqueBatches.includes(currentStoreVal) || currentStoreVal === 'ALL') ? currentStoreVal : 'ALL';
   }
 }
 
@@ -150,7 +186,7 @@ if (addForm) {
     }
 
     const name = document.getElementById('sName').value.trim();
-    const batch = document.getElementById('sBatch').value.trim() || 'Batch A'; // Naya Data
+    const batch = document.getElementById('sBatch').value.trim() || 'Batch A'; 
     const admissionDate = document.getElementById('sDate').value;
     const totalFee = Number(document.getElementById('sTotal').value) || 0;
     const discount = Number(document.getElementById('sDiscount').value) || 0;
@@ -187,7 +223,7 @@ if (addForm) {
       
       allStudentsCache.push({ id: uid, ...newStudentData });
       updateBatchDropdown();
-      applyFilters(); // Re-render with new data
+      applyFilters(); 
       
       if(typeof Swal !== 'undefined') Swal.fire({ title: 'Success!', text: 'Student enrolled successfully.', icon: 'success', timer: 2000, showConfirmButton: false });
     } catch (err) {
@@ -195,6 +231,7 @@ if (addForm) {
         addStatus.textContent = formatAuthErrorMessage(err.code) || 'Unable to register student.';
         addStatus.className = 'status danger';
       }
+      if(typeof Swal !== 'undefined') Swal.fire('Error', formatAuthErrorMessage(err.code), 'error');
     } finally {
       if (secondaryApp) {
         try { await secondaryApp.delete(); } catch (_) {}
@@ -216,7 +253,7 @@ async function loadStudents() {
       allStudentsCache.push({ id: doc.id, ...doc.data() });
     });
     updateBatchDropdown();
-    applyFilters(); // Renders the filtered list
+    applyFilters(); 
   } catch (err) {
     console.error(err);
     studentsBody.innerHTML = `<tr><td colspan="8" class="danger text-bold">Error loading records: ${err.message}</td></tr>`;
@@ -254,7 +291,6 @@ function updateSummaryMetrics(students) {
 function renderStudentsLedger(students) {
   if (!studentsBody) return;
   
-  // Also update summary for currently filtered students
   updateSummaryMetrics(students);
 
   if (students.length === 0) {
@@ -270,7 +306,7 @@ function renderStudentsLedger(students) {
     const net = Math.max(0, total - discount);
     const due = Math.max(0, net - paid);
     const serialNumber = index + 1;
-    const displayBatch = d.batch || 'Batch A'; // Default older records to Batch A
+    const displayBatch = d.batch || 'Batch A'; 
 
     const tr = document.createElement('tr');
     tr.innerHTML = `
@@ -362,13 +398,24 @@ function applyFilters() {
   renderStudentsLedger(filtered);
 }
 
-if (searchInput) {
-  searchInput.addEventListener('input', applyFilters);
+if (searchInput) searchInput.addEventListener('input', applyFilters);
+if (batchFilter) batchFilter.addEventListener('change', applyFilters);
+
+// --- NAYA: Store Master Search & Batch Filter Logic ---
+function applyStoreFilters() {
+  const query = searchStoreInput ? searchStoreInput.value.toLowerCase().trim() : '';
+  const batch = storeBatchFilter ? storeBatchFilter.value : 'ALL';
+
+  const filtered = allStoreStudentsCache.filter(s => {
+    const matchQuery = (s.name || '').toLowerCase().includes(query);
+    const matchBatch = (batch === 'ALL') || ((s.batch || 'Batch A') === batch);
+    return matchQuery && matchBatch;
+  });
+  renderStoreStudentsTable(filtered);
 }
 
-if (batchFilter) {
-  batchFilter.addEventListener('change', applyFilters);
-}
+if (searchStoreInput) searchStoreInput.addEventListener('input', applyStoreFilters);
+if (storeBatchFilter) storeBatchFilter.addEventListener('change', applyStoreFilters);
 
 // --- Store Inventory & Ledgers ---
 const productsBody = document.getElementById('productsBody');
@@ -383,12 +430,13 @@ async function loadStoreData() {
     pSnap.forEach((doc) => allProductsCache.push({ id: doc.id, ...doc.data() }));
     renderProductsTable();
   } catch (err) { }
+  
   if (storeStudentsBody && allStoreStudentsCache.length === 0) storeStudentsBody.innerHTML = '<tr><td colspan="6" class="muted">Loading store transactions...</td></tr>';
   try {
     const sSnap = await db.collection('students').orderBy('name').get();
     allStoreStudentsCache = [];
     sSnap.forEach((doc) => allStoreStudentsCache.push({ id: doc.id, ...doc.data() }));
-    renderStoreStudentsTable(allStoreStudentsCache);
+    applyStoreFilters(); // Render with filters applied
   } catch (err) { }
 }
 
@@ -431,23 +479,40 @@ async function deleteProduct(id, name) {
 
 function renderStoreStudentsTable(students) {
   if (!storeStudentsBody) return;
-  storeStudentsBody.innerHTML = students.length === 0 ? '<tr><td colspan="6" class="muted">No student ledger data found.</td></tr>' : '';
+  storeStudentsBody.innerHTML = students.length === 0 ? '<tr><td colspan="6" class="muted">No student records found.</td></tr>' : '';
   students.forEach((student, index) => {
     const items = student.storeItems || [];
     const existingStorePaid = Number(student.storePaid) || 0;
+    const displayBatch = student.batch || 'Batch A'; // Show batch in store
+
     let storeTotalBill = 0;
     items.forEach(i => storeTotalBill += Number(i.price));
     const storeDue = Math.max(0, storeTotalBill - existingStorePaid);
+    
     let itemsText = items.length > 0 ? items.map((item, itemIdx) => `<span class="store-item-badge" style="display:inline-flex; align-items:center; background:#F8F4EE; border:1px solid #EADBCC; padding:4px 10px; border-radius:20px; font-size:11.5px; font-weight:600; margin:3px; color:var(--primary);">${sanitizeOutput(item.productName)} <span style="opacity:0.65; font-weight:500; margin-left:3px;">(₹${item.price})</span><button type="button" class="removeStoreItemBtn" data-student-id="${student.id}" data-item-index="${itemIdx}" style="background:transparent; border:none; color:#B22222; font-weight:bold; cursor:pointer; font-size:15px; margin-left:6px; padding:0; line-height:1; display:flex; align-items:center; opacity:0.6; transition:0.2s;">×</button></span>`).join('') : '<span class="muted table-text-muted">No items</span>';
 
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td><strong>${index + 1}. ${sanitizeOutput(student.name)}</strong></td><td>${itemsText}</td><td class="text-bold">₹${storeTotalBill}</td><td class="success text-bold">₹${existingStorePaid}</td><td class="${storeDue > 0 ? 'danger' : 'success'} text-bold">₹${storeDue}</td><td><input type="number" class="storePaidInput input-ledger-action" min="0" step="1" placeholder="+ Add ₹"><button class="btn small primary storeUpdateBtn" title="Add Payment">Add</button> <button class="btn small ghost assignBtn" title="Assign Item">🛍️ Assign</button></td>`;
+    tr.innerHTML = `
+      <td>
+        <strong>${index + 1}. ${sanitizeOutput(student.name)}</strong>
+        <div style="font-size:11px; font-weight:bold; color:var(--gold); margin-top:2px;">🏷️ ${sanitizeOutput(displayBatch)}</div>
+      </td>
+      <td>${itemsText}</td>
+      <td class="text-bold">₹${storeTotalBill}</td>
+      <td class="success text-bold">₹${existingStorePaid}</td>
+      <td class="${storeDue > 0 ? 'danger' : 'success'} text-bold">₹${storeDue}</td>
+      <td>
+        <input type="number" class="storePaidInput input-ledger-action" min="0" step="1" placeholder="+ Add ₹">
+        <button class="btn small primary storeUpdateBtn" title="Add Payment">Add</button> 
+        <button class="btn small ghost assignBtn" title="Assign Item">🛍️ Assign</button>
+      </td>
+    `;
     
     tr.querySelector('.storeUpdateBtn').addEventListener('click', () => {
       const valInput = tr.querySelector('.storePaidInput').value;
       if (valInput === '') return;
       student.storePaid = existingStorePaid + (Number(valInput) || 0);
-      renderStoreStudentsTable(allStoreStudentsCache);
+      applyStoreFilters();
       db.collection('students').doc(student.id).update({ storePaid: student.storePaid });
     });
 
@@ -455,7 +520,7 @@ function renderStoreStudentsTable(students) {
       btn.addEventListener('click', () => {
         const sId = btn.getAttribute('data-student-id');
         const idx = Number(btn.getAttribute('data-item-index'));
-        const action = () => { const t = allStoreStudentsCache.find(s => s.id === sId); if(t && t.storeItems) { t.storeItems.splice(idx, 1); if(t.storeItems.length === 0) t.storePaid = 0; renderStoreStudentsTable(allStoreStudentsCache); db.collection('students').doc(sId).update({ storeItems: t.storeItems, storePaid: t.storePaid }); } };
+        const action = () => { const t = allStoreStudentsCache.find(s => s.id === sId); if(t && t.storeItems) { t.storeItems.splice(idx, 1); if(t.storeItems.length === 0) t.storePaid = 0; applyStoreFilters(); db.collection('students').doc(sId).update({ storeItems: t.storeItems, storePaid: t.storePaid }); } };
         if(typeof Swal !== 'undefined') Swal.fire({ title: 'Remove Item?', text: 'Remove from account?', icon: 'question', showCancelButton: true, confirmButtonColor: '#C49A45', confirmButtonText: 'Yes' }).then((r) => { if(r.isConfirmed) action(); });
         else if (confirm('Remove this product?')) action();
       });
@@ -467,8 +532,8 @@ function renderStoreStudentsTable(students) {
 
 function openAssignModal(student) {
   if (allProductsCache.length === 0) {
-    if(typeof Swal !== 'undefined') Swal.fire('Notice', 'Register inventory items first.', 'info');
-    else alert('Register inventory items first.');
+    if(typeof Swal !== 'undefined') Swal.fire('Notice', 'Please register inventory items before assigning.', 'info');
+    else alert('Please register inventory items before assigning.');
     return;
   }
   document.getElementById('assignStudentId').value = student.id;
@@ -491,20 +556,20 @@ if (assignProductForm) {
     if (!productVal) return;
     const [pName, pPrice] = productVal.split('|');
     const newItem = { productName: pName, price: Number(pPrice), date: new Date().toISOString() };
+    
     closeAssignModal();
     const targetStudent = allStoreStudentsCache.find(s => s.id === studentId);
-    if (targetStudent) { if (!targetStudent.storeItems) targetStudent.storeItems = []; targetStudent.storeItems.push(newItem); renderStoreStudentsTable(allStoreStudentsCache); }
-    db.collection('students').doc(studentId).update({ storeItems: firebase.firestore.FieldValue.arrayUnion(newItem) }).catch(err => {
+    if (targetStudent) { 
+      if (!targetStudent.storeItems) targetStudent.storeItems = []; 
+      targetStudent.storeItems.push(newItem); 
+      applyStoreFilters(); 
+    }
+    db.collection('students').doc(studentId).update({ storeItems: firebase.firestore.FieldValue.arrayUnion(newItem) }).then(() => {
+      // NAYA: Animation on successful assignment
+      if(typeof Swal !== 'undefined') Swal.fire({ title: 'Assigned!', text: `${pName} added to student's account.`, icon: 'success', timer: 1500, showConfirmButton: false });
+    }).catch(err => {
       if(typeof Swal !== 'undefined') Swal.fire('Error', 'Failed to sync.', 'error'); else alert('Failed to sync.');
     });
-  });
-}
-
-if (searchStoreInput) {
-  searchStoreInput.addEventListener('input', (e) => {
-    const query = e.target.value.toLowerCase().trim();
-    const filtered = allStoreStudentsCache.filter((s) => (s.name || '').toLowerCase().includes(query));
-    renderStoreStudentsTable(filtered);
   });
 }
 
@@ -512,7 +577,7 @@ if (searchStoreInput) {
 function openEditModal(student) {
   document.getElementById('editStudentId').value = student.id;
   document.getElementById('editName').value = student.name || '';
-  document.getElementById('editBatch').value = student.batch || 'Batch A'; // Batch Edit
+  document.getElementById('editBatch').value = student.batch || 'Batch A'; 
   document.getElementById('editDate').value = student.admissionDate || '';
   document.getElementById('editEmail').value = student.email || '';
   document.getElementById('editPassword').value = student.password || '';
@@ -552,7 +617,11 @@ async function updateStudentDatabase() {
     applyFilters();
   }
   const storeStudentObj = allStoreStudentsCache.find(s => s.id === id);
-  if (storeStudentObj) storeStudentObj.name = newName;
+  if (storeStudentObj) {
+    storeStudentObj.name = newName;
+    storeStudentObj.batch = newBatch;
+    applyStoreFilters();
+  }
 
   db.collection('students').doc(id).update({
     name: newName, batch: newBatch, admissionDate: newDate, email: newEmail, password: newPassword, totalFee: newTotalFee, discount: newDiscount, paidFee: newPaidFee
