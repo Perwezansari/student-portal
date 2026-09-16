@@ -265,13 +265,15 @@
 <div id="certModal" class="modal-overlay" style="display:none;">
   <div class="modal-content">
     <div class="card-head modal-head">
-      <h3>🎓 Issue Certificate</h3>
+      <h3>🎓 Issue / Edit Certificate</h3>
       <button type="button" onclick="closeCertModal()" class="btn ghost small">✕</button>
     </div>
     <p id="certModalStudentName" class="modal-subtitle"></p>
     <form id="certForm">
       <input type="hidden" id="certStudentId">
       <input type="hidden" id="certStudentNameInput">
+      <!-- Naya Field: Track existing certificate -->
+      <input type="hidden" id="existingCertId">
       
       <label>Certificate No.:</label>
       <input type="text" id="certNumber" class="modal-field" placeholder="e.g. SHC/26/01" required>

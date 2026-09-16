@@ -659,7 +659,7 @@ if (btnRemoveResult) {
 }
 
 // ============================================================
-// Certificate Generation Logic (High-Security Dual-ID System)
+// Certificate Generation Logic (Smart Edit & Dynamic Domain)
 // ============================================================
 const certModal = document.getElementById('certModal');
 const certForm = document.getElementById('certForm');
@@ -676,14 +676,30 @@ function openCertModal(student) {
   document.getElementById('certStudentNameInput').value = student.name;
   document.getElementById('certModalStudentName').textContent = `Issue to: ${student.name}`;
   
-  // Clear modal inputs for new entry
-  document.getElementById('certNumber').value = '';
-  document.getElementById('certCourse').value = '';
+  const submitBtn = certForm.querySelector('button[type="submit"]');
+
+  // Check if student already has a certificate
+  if (student.certificate) {
+    // EDIT MODE: Purani details form mein daal do
+    document.getElementById('existingCertId').value = student.certificate.id;
+    document.getElementById('certNumber').value = student.certificate.certNumber || '';
+    document.getElementById('certCourse').value = student.certificate.courseName || '';
+    document.getElementById('certDate').value = student.certificate.issueDate || '';
+    
+    certGeneratedLink.value = student.certificate.url || '';
+    certLinkResult.style.display = 'flex';
+    if (submitBtn) submitBtn.textContent = 'Update Certificate';
+  } else {
+    // NEW MODE: Form khali rakho
+    document.getElementById('existingCertId').value = '';
+    document.getElementById('certNumber').value = '';
+    document.getElementById('certCourse').value = '';
+    document.getElementById('certDate').value = new Date().toISOString().split('T')[0];
+    
+    certLinkResult.style.display = 'none';
+    if (submitBtn) submitBtn.textContent = 'Generate & Save Certificate';
+  }
   
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('certDate').value = today;
-  
-  certLinkResult.style.display = 'none';
   certModal.style.display = 'flex';
 }
 
@@ -692,14 +708,15 @@ if (certForm) {
     e.preventDefault();
     const btn = certForm.querySelector('button[type="submit"]');
     btn.disabled = true;
-    btn.textContent = 'Generating Securely...';
+    btn.textContent = 'Processing...';
 
+    const studentId = document.getElementById('certStudentId').value;
     const sName = document.getElementById('certStudentNameInput').value;
     const rawCertNo = document.getElementById('certNumber').value.trim();
     const sCourse = document.getElementById('certCourse').value.trim();
     const sDate = document.getElementById('certDate').value;
+    const existingId = document.getElementById('existingCertId').value;
     
-    // Generate a highly secure, unguessable 16-character random ID for URL & Database lookup
     const generateSecureId = () => {
       const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
       let randomStr = '';
@@ -709,33 +726,54 @@ if (certForm) {
       return 'VERIFY-' + randomStr; 
     };
     
-    const secureDocId = generateSecureId();
+    // Agar purana ID hai to wo use karo, nahi to naya banao
+    const secureDocId = existingId ? existingId : generateSecureId();
 
     try {
-      // Store certificate data in Firestore mapped to the secure ID
+      // 🌟 DYNAMIC DOMAIN RESOLVER (No hardcoded URL)
+      // Yeh automatically current domain detect kar lega (github.io ho ya official .com)
+      const baseUrl = window.location.href.split('/').slice(0, -1).join('/');
+      const verifyLink = `${baseUrl}/verify.html?id=${secureDocId}`;
+
+      // 1. Certificate Database update karo
       await db.collection('certificates').doc(secureDocId).set({
-        certNumber: rawCertNo, // Stores the formatted visual ID (e.g., SHC/26/01)
+        certNumber: rawCertNo, 
         studentName: sName,
         courseName: sCourse,
         issueDate: sDate,
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
       });
 
-      // Construct verification URL automatically matching correct deployment directory
-      const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/'));
+      // 2. Student Data ko Certificate ke sath link karo (Taki next time edit ho sake)
+      const certDataObj = {
+        id: secureDocId,
+        certNumber: rawCertNo,
+        courseName: sCourse,
+        issueDate: sDate,
+        url: verifyLink
+      };
+
+      await db.collection('students').doc(studentId).update({
+        certificate: certDataObj
+      });
+
+      // 3. Local Web Cache update karo
+      const targetStudent = allStudentsCache.find(s => s.id === studentId);
+      if (targetStudent) {
+        targetStudent.certificate = certDataObj;
+      }
       
-      // Specifically force to use GitHub exact path as verified working
-      const verifyLink = `https://perwezansari.github.io/student-portal/verify.html?id=${secureDocId}`;
-      
+      // 4. UI Update
+      document.getElementById('existingCertId').value = secureDocId;
       certGeneratedLink.value = verifyLink;
       certLinkResult.style.display = 'flex';
       certGeneratedLink.select();
       
     } catch (error) {
-      alert("System Error: Unable to issue certificate. " + error.message);
+      alert("System Error: Unable to process certificate. " + error.message);
     } finally {
       btn.disabled = false;
-      btn.textContent = 'Generate & Save Certificate';
+      btn.textContent = existingId ? 'Update Certificate' : 'Generate & Save Certificate';
     }
   });
 }
