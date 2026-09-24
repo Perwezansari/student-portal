@@ -8,7 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <style>
-  /* Premium Certificate Verification Card Styling */
+  /* Verification Card Core Styles */
   .verify-container {
     text-align: center;
     max-width: 400px;
@@ -26,7 +26,6 @@
     text-align: center;
   }
   
-  /* Inner Dashed Border for Premium Look */
   .verify-card-premium::before {
     content: '';
     position: absolute;
@@ -94,7 +93,7 @@
   .footer-right { text-align: right; }
   .footer-value { font-size: 14px; font-weight: 700; color: #450B12; }
 
-  /* Premium Instagram CTA Styling */
+  /* Instagram Action Button */
   .insta-cta-wrapper {
     margin-top: 25px;
     padding-top: 20px;
@@ -139,7 +138,7 @@
     height: 18px;
   }
 
-  /* Official Copyright Footer */
+  /* Official Organization Footer */
   .official-copyright-footer {
     margin-top: 35px;
     padding-top: 15px;
@@ -190,7 +189,7 @@
       <p class="muted">Scanning official database...</p>
     </div>
 
-    <!-- Official Copyright & Security Footer -->
+    <!-- Official Copyright & Security Registry -->
     <div class="official-copyright-footer">
       &copy; <script>document.write(new Date().getFullYear())</script> <strong>Shama Henna Classes</strong>.<br> All Rights Reserved.
       <div class="security-registry-badge">
@@ -204,14 +203,13 @@
   </div>
 </div>
 
-<!-- Firebase Service Connectors -->
+<!-- Firebase SDK Integration -->
 <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
 
 <script>
-  // Process incoming verification request via URL parameter
   const urlParams = new URLSearchParams(window.location.search);
   const certId = urlParams.get('id');
   const verifyContent = document.getElementById('verifyContent');
@@ -219,13 +217,11 @@
   if (!certId) {
     verifyContent.innerHTML = `<p class="error">❌ Invalid QR Code. Authentication ID is missing.</p>`;
   } else {
-    // Validate secure ID against Firestore database
     db.collection('certificates').doc(certId).get().then((doc) => {
       if (doc.exists) {
         const data = doc.data();
         const displayCertId = data.certNumber ? data.certNumber : certId; 
 
-        // Convert standard date to premium readable format
         const rawDate = new Date(data.issueDate);
         const formattedDate = rawDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
@@ -257,11 +253,10 @@
               </div>
             </div>
 
-            <!-- PREMIUM INSTAGRAM CTA BUTTON -->
+            <!-- Instagram Community Link -->
             <div class="insta-cta-wrapper">
-              <p class="insta-text">Join Our Henna Artists Community</p>
-              <!-- DHYAN DEIN: Yahan apna asli Instagram link zarur check kar lein -->
-              <a href="https://instagram.com/shamahennaclasses" target="_blank" class="insta-btn">
+              <p class="insta-text">Connect With Us</p>
+              <a href="https://www.instagram.com/shama_henna.classes?stkn=MWxvc3J1Z21obzY2cA==" target="_blank" class="insta-btn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
                   <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
