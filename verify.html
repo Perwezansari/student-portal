@@ -8,7 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <style>
-  /* Premium Certificate Verification Card Styling (Optimized for official viewing) */
+  /* Premium Certificate Verification Card Styling */
   .verify-container {
     text-align: center;
     max-width: 400px;
@@ -93,6 +93,83 @@
   .footer-left { text-align: left; }
   .footer-right { text-align: right; }
   .footer-value { font-size: 14px; font-weight: 700; color: #450B12; }
+
+  /* Premium Instagram CTA Styling */
+  .insta-cta-wrapper {
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px dashed #EADBCC;
+    position: relative;
+    z-index: 2;
+  }
+  
+  .insta-text {
+    font-size: 11px;
+    font-weight: 800;
+    color: #7A6E6D;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+  }
+  
+  .insta-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+    color: #ffffff;
+    padding: 12px 28px;
+    border-radius: 30px;
+    font-size: 14.5px;
+    font-weight: 700;
+    text-decoration: none;
+    box-shadow: 0 6px 15px rgba(220, 39, 67, 0.25);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .insta-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(220, 39, 67, 0.4);
+    color: #ffffff;
+  }
+  
+  .insta-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* Official Copyright Footer */
+  .official-copyright-footer {
+    margin-top: 35px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(196, 154, 69, 0.25);
+    font-size: 10.5px;
+    font-weight: 600;
+    color: #9E9493;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    line-height: 1.6;
+  }
+
+  .official-copyright-footer strong {
+    color: #78202B;
+  }
+
+  .security-registry-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 8px;
+    color: #1E7E34;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    background: rgba(30, 126, 52, 0.08);
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
 </style>
 </head>
 <body>
@@ -112,6 +189,18 @@
     <div id="verifyContent" class="verify-content-wrapper">
       <p class="muted">Scanning official database...</p>
     </div>
+
+    <!-- Official Copyright & Security Footer -->
+    <div class="official-copyright-footer">
+      &copy; <script>document.write(new Date().getFullYear())</script> <strong>Shama Henna Classes</strong>.<br> All Rights Reserved.
+      <div class="security-registry-badge">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+        </svg>
+        Secure Verification Registry
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -136,7 +225,7 @@
         const data = doc.data();
         const displayCertId = data.certNumber ? data.certNumber : certId; 
 
-        // Convert standard date (YYYY-MM-DD) to a premium readable format (e.g., 14 Sep 2026)
+        // Convert standard date to premium readable format
         const rawDate = new Date(data.issueDate);
         const formattedDate = rawDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
@@ -166,6 +255,20 @@
                 <div class="detail-label">Certificate No.</div>
                 <div class="footer-value">${displayCertId}</div>
               </div>
+            </div>
+
+            <!-- PREMIUM INSTAGRAM CTA BUTTON -->
+            <div class="insta-cta-wrapper">
+              <p class="insta-text">Join Our Henna Artists Community</p>
+              <!-- DHYAN DEIN: Yahan apna asli Instagram link zarur check kar lein -->
+              <a href="https://instagram.com/shamahennaclasses" target="_blank" class="insta-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                  <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                </svg>
+                Follow on Instagram
+              </a>
             </div>
           </div>
         `;
