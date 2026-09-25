@@ -93,11 +93,9 @@
   .footer-right { text-align: right; }
   .footer-value { font-size: 14px; font-weight: 700; color: #450B12; }
 
-  /* Instagram Action Button */
+  /* Instagram Action Button (Moved Outside) */
   .insta-cta-wrapper {
-    margin-top: 25px;
-    padding-top: 20px;
-    border-top: 1px dashed #EADBCC;
+    margin-top: 30px;
     position: relative;
     z-index: 2;
   }
@@ -242,7 +240,7 @@
               <div class="detail-value">${data.courseName}</div>
             </div>
             
-            <div class="footer-details detail-group">
+            <div class="footer-details detail-group" style="margin-bottom: 0;">
               <div class="footer-left">
                 <div class="detail-label">Issue Date</div>
                 <div class="footer-value">${formattedDate}</div>
@@ -252,19 +250,19 @@
                 <div class="footer-value">${displayCertId}</div>
               </div>
             </div>
+          </div>
 
-            <!-- Instagram Community Link -->
-            <div class="insta-cta-wrapper">
-              <p class="insta-text">Connect With Us</p>
-              <a href="https://www.instagram.com/shama_henna.classes?stkn=MWxvc3J1Z21obzY2cA==" target="_blank" class="insta-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
-                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-                  <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
-                </svg>
-                Follow on Instagram
-              </a>
-            </div>
+          <!-- Instagram Community Link (Moved Outside the Box) -->
+          <div class="insta-cta-wrapper">
+            <p class="insta-text">Connect with Our Official Network</p>
+            <a href="https://instagram.com/shamahennaclasses" target="_blank" class="insta-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+              </svg>
+              Follow on Instagram
+            </a>
           </div>
         `;
       } else {
