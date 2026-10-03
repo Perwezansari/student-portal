@@ -10,6 +10,66 @@
 <link rel="stylesheet" href="style.css">
 <!-- Premium Animated Popups Library (SweetAlert2) -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- Premium 3D Buttons -->
+<style>
+  .btn-pending {
+    background: #FFFFFF;
+    color: #B22222;
+    border: 1.5px solid #FFD0D0;
+    box-shadow: 0 4px 10px rgba(178, 34, 34, 0.08);
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 10px 16px;
+    transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+  }
+  .btn-pending:hover {
+    background: #FFF5F5;
+    border-color: #B22222;
+    box-shadow: 0 6px 15px rgba(178, 34, 34, 0.15);
+    transform: translateY(-2px);
+  }
+  .btn-pending.active {
+    background: linear-gradient(135deg, #B22222 0%, #78202B 100%);
+    color: #FFF;
+    border: 1.5px solid #78202B;
+    box-shadow: 0 6px 20px rgba(178, 34, 34, 0.25);
+  }
+  
+  .btn-excel {
+    background: linear-gradient(180deg, #28A745 0%, #217346 100%);
+    color: #FFF;
+    border: none;
+    border-bottom: 4px solid #144d2d;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 10px 18px;
+    box-shadow: 0 5px 15px rgba(33, 115, 70, 0.25);
+    transition: all 0.15s ease;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+  }
+  .btn-excel:hover {
+    transform: translateY(1px);
+    border-bottom: 3px solid #144d2d;
+    box-shadow: 0 4px 10px rgba(33, 115, 70, 0.3);
+  }
+  .btn-excel:active {
+    transform: translateY(4px);
+    border-bottom: 0px solid #144d2d;
+    box-shadow: 0 2px 5px rgba(33, 115, 70, 0.3);
+    margin-bottom: -4px;
+  }
+</style>
 </head>
 <body>
 
@@ -31,10 +91,16 @@
     <label for="password">Admin Password</label>
     <div class="password-wrapper">
       <input type="password" id="password" required autocomplete="current-password" placeholder="••••••••">
-      <button type="button" class="toggle-password" onclick="togglePasswordVisibility('password', this)">👁️</button>
+      <button type="button" class="toggle-password" onclick="togglePasswordVisibility('password', this)">👁</button>
     </div>
     <button type="submit" class="btn primary full">Login to Admin Panel</button>
     <p id="loginError" class="error"></p>
+
+    <!-- VIP Footer Design with Automatic Year for Admin -->
+    <div class="auth-footer">
+      Developed by <strong class="auth-footer-highlight">Perwez</strong>
+      <div style="font-size: 10px; margin-top: 6px; color: #9E9493; letter-spacing: 0.5px;">&copy; <script>document.write(new Date().getFullYear());</script> Shama Henna Classes. All Rights Reserved.</div>
+    </div>
   </form>
 </div>
 
@@ -97,12 +163,13 @@
       <div class="card-head">
         <h2>📋 Registered Students & Fee Records</h2>
       </div>
-      <!-- Batch Dropdown Filter -->
       <div class="search-box" style="display: flex; gap: 10px; flex-wrap: wrap;">
         <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search student by name or email ID..." style="flex: 2; min-width: 200px;">
         <select id="batchFilter" class="search-input" style="flex: 1; min-width: 150px;">
           <option value="ALL">All Batches</option>
         </select>
+        <button type="button" id="pendingMainFilterBtn" class="btn-pending">🔴 Pending Dues</button>
+        <button type="button" id="exportLedgerBtn" class="btn-excel">📥 Excel Report</button>
       </div>
       <p id="permissionError" class="error" style="display:none;">Access restricted. Administrator credentials required.</p>
       <div class="table-wrap">
@@ -172,12 +239,12 @@
       <div class="card-head">
         <h2>👩‍🎓 Student Store Records</h2>
       </div>
-      <!-- NAYA FEATURE: Store Dashboard mein bhi Batch Filter -->
       <div class="search-box" style="display: flex; gap: 10px; flex-wrap: wrap;">
         <input type="text" id="searchStoreInput" class="search-input" placeholder="🔍 Search student by name in store..." style="flex: 2; min-width: 200px;">
         <select id="storeBatchFilter" class="search-input" style="flex: 1; min-width: 150px;">
           <option value="ALL">All Batches</option>
         </select>
+        <button type="button" id="pendingStoreFilterBtn" class="btn-pending">🔴 Pending Dues</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -298,7 +365,7 @@
       
       <button type="submit" class="btn primary full">Generate & Save Certificate</button>
       
-      <button type="button" id="btnDeleteCert" class="btn danger full" style="margin-top: 10px; display: none;">🗑️ Revoke & Delete Certificate</button>
+      <button type="button" id="btnDeleteCert" class="btn danger full" style="margin-top: 10px; display: none;">🗑 Revoke & Delete Certificate</button>
     </form>
     
     <div id="certLinkResult" class="modal-footer-actions" style="display:none; background: #E8F5E9; padding: 10px; border-radius: 8px; flex-direction: column;">
@@ -316,7 +383,7 @@
       triggerElement.textContent = '🙈';
     } else {
       field.type = 'password';
-      triggerElement.textContent = '👁️';
+      triggerElement.textContent = '👁';
     }
   }
 </script>

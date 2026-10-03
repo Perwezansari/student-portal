@@ -1,6 +1,10 @@
-// ============================================================
-// Student Portal Application Logic (Stable & Error-Free)
-// ============================================================
+// Student Portal Application Logic 
+if (typeof Swal === 'undefined') {
+  const script = document.createElement('script');
+  script.src = "https://cdn.jsdelivr.net/npm/sweetalert2@11";
+  document.head.appendChild(script);
+}
+
 const loginView = document.getElementById('loginView');
 const dashboardView = document.getElementById('dashboardView');
 
@@ -57,7 +61,6 @@ if (loginForm) {
 
     try {
       await auth.signInWithEmailAndPassword(email, password);
-      // Success par 'onAuthStateChanged' khud dashboard open kar dega
     } catch (error) {
       if (loginError) loginError.textContent = formatAuthErrorMessage(error.code) || 'Authentication failed.';
       if (submitButton) {
@@ -68,10 +71,30 @@ if (loginForm) {
   });
 }
 
+// --- Professional Animated Logout Logic ---
 if (logoutBtn) {
-  logoutBtn.addEventListener('click', async () => {
-    resetLoginFormState();
-    await auth.signOut();
+  logoutBtn.addEventListener('click', () => {
+    if (typeof Swal !== 'undefined') {
+      Swal.fire({
+        title: 'Logout?',
+        text: "Are you sure you want to securely exit your portal?",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#78202B',
+        cancelButtonColor: '#7A6E6D',
+        confirmButtonText: 'Yes, Logout'
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          resetLoginFormState();
+          await auth.signOut();
+        }
+      });
+    } else {
+      if (confirm('Are you sure you want to securely log out?')) {
+        resetLoginFormState();
+        auth.signOut();
+      }
+    }
   });
 }
 
@@ -95,14 +118,13 @@ async function fetchStudentProfile(uid) {
     if (dashboardView) dashboardView.style.display = 'block';
     if (welcomeStudentName) welcomeStudentName.textContent = dataPayload.name || 'Student';
 
-    // Financial Metrics Calculation
     const totalAmount = Number(dataPayload.totalFee) || 0;
     const discountAmount = Number(dataPayload.discount) || 0;
     const netPayableAmount = Math.max(0, totalAmount - discountAmount);
     const paidAmount = Number(dataPayload.paidFee) || 0;
     const dueAmount = Math.max(0, netPayableAmount - paidAmount);
     const formattedAdmissionDate = formatDisplayDate(dataPayload.admissionDate);
-    const displayBatch = dataPayload.batch || 'Batch A'; // Dashboard par dikhega
+    const displayBatch = dataPayload.batch || 'Batch A'; 
 
     if (dashboardContent) {
       dashboardContent.innerHTML = `
@@ -168,7 +190,6 @@ if (btnPrintReceipt) {
     }
 
     documentWindow.document.open();
-    // Yahan se Receipt par se Batch Name ko hide/remove kar diya gaya hai
     documentWindow.document.write(`
       <!DOCTYPE html>
       <html lang="en">

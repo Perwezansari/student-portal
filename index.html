@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!-- Mobile Viewport Fix (Zoom problem ke liye) -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Shama Henna Classes — Student Portal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
@@ -15,7 +15,7 @@
 <!-- Authentication View -->
 <div id="loginView" class="auth-wrap">
   <div class="top-nav-link">
-    <a href="admin.html" class="nav-switch-btn"> Admin Login →</a>
+    <a href="admin.html" class="nav-switch-btn">Admin Login →</a>
   </div>
 
   <form id="loginForm" class="auth-card">
@@ -40,13 +40,15 @@
     <button type="submit" class="btn primary full">Login to Dashboard</button>
     <p id="loginError" class="error"></p>
 
+    <!-- VIP Footer Design with Automatic Year -->
     <div class="auth-footer">
       Developed by <strong class="auth-footer-highlight">Perwez</strong>
+      <div style="font-size: 10px; margin-top: 6px; color: #9E9493; letter-spacing: 0.5px;">&copy; <script>document.write(new Date().getFullYear());</script> Shama Henna Classes. All Rights Reserved.</div>
     </div>
   </form>
 </div>
 
-<!-- Student Dashboard Container (Fix: view-state-hidden hata diya gaya hai) -->
+<!-- Student Dashboard Container -->
 <div id="dashboardView" style="display:none;">
   <header class="topbar">
     <div class="topbar-brand">
@@ -89,7 +91,6 @@
   </main>
 </div>
 
-<!-- Receipt Rendering Script Engine -->
 <script>
   function togglePasswordVisibility(inputId, triggerElement) {
     const field = document.getElementById(inputId);

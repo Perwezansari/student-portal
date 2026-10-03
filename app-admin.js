@@ -1,8 +1,4 @@
-// ============================================================
 // Admin Portal Core Application Logic (With Batch & Premium Animations)
-// ============================================================
-
-// Dynamically inject SweetAlert2 so admin.html doesn't need changes if missing
 if (typeof Swal === 'undefined') {
   const script = document.createElement('script');
   script.src = "https://cdn.jsdelivr.net/npm/sweetalert2@11";
@@ -21,7 +17,14 @@ const studentsBody = document.getElementById('studentsBody');
 const searchInput = document.getElementById('searchInput');
 const batchFilter = document.getElementById('batchFilter'); 
 const searchStoreInput = document.getElementById('searchStoreInput');
-const storeBatchFilter = document.getElementById('storeBatchFilter'); // Naya Store Batch Filter
+const storeBatchFilter = document.getElementById('storeBatchFilter');
+const exportLedgerBtn = document.getElementById('exportLedgerBtn');
+
+// --- Feature: Pending Filters State ---
+let isMainPendingFilterActive = false;
+let isStorePendingFilterActive = false;
+const pendingMainFilterBtn = document.getElementById('pendingMainFilterBtn');
+const pendingStoreFilterBtn = document.getElementById('pendingStoreFilterBtn');
 
 let allStudentsCache = [];
 let allProductsCache = []; 
@@ -116,7 +119,6 @@ loginForm.addEventListener('submit', async (e) => {
   }
 });
 
-// NAYA: Animated Logout Confirmation
 if (logoutBtn) {
   logoutBtn.addEventListener('click', () => {
     if(typeof Swal !== 'undefined') {
@@ -143,11 +145,9 @@ if (logoutBtn) {
   });
 }
 
-// --- Helper: Update Batch Dropdowns ---
 function updateBatchDropdown() {
   const uniqueBatches = [...new Set(allStudentsCache.map(s => s.batch || 'Batch A'))].sort();
   
-  // 1. Main Dashboard Batch Filter
   if (batchFilter) {
     const currentVal = batchFilter.value;
     batchFilter.innerHTML = '<option value="ALL">All Batches</option>';
@@ -160,7 +160,6 @@ function updateBatchDropdown() {
     batchFilter.value = (uniqueBatches.includes(currentVal) || currentVal === 'ALL') ? currentVal : 'ALL';
   }
 
-  // 2. Store Dashboard Batch Filter
   if (storeBatchFilter) {
     const currentStoreVal = storeBatchFilter.value;
     storeBatchFilter.innerHTML = '<option value="ALL">All Batches</option>';
@@ -174,7 +173,6 @@ function updateBatchDropdown() {
   }
 }
 
-// --- Student Registration Logic ---
 if (addForm) {
   addForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -385,7 +383,65 @@ function renderStudentsLedger(students) {
   });
 }
 
-// --- Master Search & Batch Filter Logic ---
+// --- Feature: Export Ledger to Excel (CSV Format) ---
+if (exportLedgerBtn) {
+  exportLedgerBtn.addEventListener('click', () => {
+    if (allStudentsCache.length === 0) {
+      if (typeof Swal !== 'undefined') Swal.fire('Empty Data', 'No student records found to export.', 'info');
+      else alert("No records to export.");
+      return;
+    }
+
+    // Creating Headers for Excel File
+    let csvContent = "Student Name,Batch,Admission Date,Email ID,Total Fee (Rs),Discount (Rs),Paid Amount (Rs),Due Balance (Rs),Result Status\n";
+
+    // Loop through all saved students
+    allStudentsCache.forEach(student => {
+      const name = `"${(student.name || '').replace(/"/g, '""')}"`;
+      const batch = `"${(student.batch || 'Batch A').replace(/"/g, '""')}"`;
+      const date = `"${student.admissionDate || ''}"`;
+      const email = `"${(student.email || '').replace(/"/g, '""')}"`;
+      
+      const total = Number(student.totalFee) || 0;
+      const discount = Number(student.discount) || 0;
+      const paid = Number(student.paidFee) || 0;
+      const due = Math.max(0, (total - discount) - paid);
+      
+      let result = "Not Set";
+      if (student.result && student.result.isPublished) result = student.result.status;
+
+      csvContent += `${name},${batch},${date},${email},${total},${discount},${paid},${due},${result}\n`;
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Shama_Henna_Ledger_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    if (typeof Swal !== 'undefined') Swal.fire({ title: 'Exported!', text: 'Excel report downloaded successfully.', icon: 'success', timer: 1500, showConfirmButton: false });
+  });
+}
+
+// --- Main Ledger Search, Batch & Premium Pending Filter ---
+if (pendingMainFilterBtn) {
+  pendingMainFilterBtn.addEventListener('click', () => {
+    isMainPendingFilterActive = !isMainPendingFilterActive;
+    if (isMainPendingFilterActive) {
+      pendingMainFilterBtn.classList.add('active');
+      pendingMainFilterBtn.innerHTML = '✅ Showing Pending';
+    } else {
+      pendingMainFilterBtn.classList.remove('active');
+      pendingMainFilterBtn.innerHTML = '🔴 Pending Dues';
+    }
+    applyFilters();
+  });
+}
+
 function applyFilters() {
   const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
   const batch = batchFilter ? batchFilter.value : 'ALL';
@@ -393,7 +449,15 @@ function applyFilters() {
   const filtered = allStudentsCache.filter(s => {
     const matchQuery = (s.name || '').toLowerCase().includes(query) || (s.email || '').toLowerCase().includes(query);
     const matchBatch = (batch === 'ALL') || ((s.batch || 'Batch A') === batch);
-    return matchQuery && matchBatch;
+    
+    // Check pending due logically
+    const total = Number(s.totalFee) || 0;
+    const discount = Number(s.discount) || 0;
+    const paid = Number(s.paidFee) || 0;
+    const due = Math.max(0, (total - discount) - paid);
+    const matchPending = isMainPendingFilterActive ? (due > 0) : true;
+
+    return matchQuery && matchBatch && matchPending;
   });
   renderStudentsLedger(filtered);
 }
@@ -401,7 +465,21 @@ function applyFilters() {
 if (searchInput) searchInput.addEventListener('input', applyFilters);
 if (batchFilter) batchFilter.addEventListener('change', applyFilters);
 
-// --- NAYA: Store Master Search & Batch Filter Logic ---
+// --- Store Ledger Search, Batch & Premium Pending Filter ---
+if (pendingStoreFilterBtn) {
+  pendingStoreFilterBtn.addEventListener('click', () => {
+    isStorePendingFilterActive = !isStorePendingFilterActive;
+    if (isStorePendingFilterActive) {
+      pendingStoreFilterBtn.classList.add('active');
+      pendingStoreFilterBtn.innerHTML = '✅ Showing Pending';
+    } else {
+      pendingStoreFilterBtn.classList.remove('active');
+      pendingStoreFilterBtn.innerHTML = '🔴 Pending Dues';
+    }
+    applyStoreFilters();
+  });
+}
+
 function applyStoreFilters() {
   const query = searchStoreInput ? searchStoreInput.value.toLowerCase().trim() : '';
   const batch = storeBatchFilter ? storeBatchFilter.value : 'ALL';
@@ -409,7 +487,17 @@ function applyStoreFilters() {
   const filtered = allStoreStudentsCache.filter(s => {
     const matchQuery = (s.name || '').toLowerCase().includes(query);
     const matchBatch = (batch === 'ALL') || ((s.batch || 'Batch A') === batch);
-    return matchQuery && matchBatch;
+
+    // Calculate Store Due
+    const items = s.storeItems || [];
+    let storeTotalBill = 0;
+    items.forEach(i => storeTotalBill += Number(i.price));
+    const existingStorePaid = Number(s.storePaid) || 0;
+    const storeDue = Math.max(0, storeTotalBill - existingStorePaid);
+    
+    const matchPending = isStorePendingFilterActive ? (storeDue > 0) : true;
+
+    return matchQuery && matchBatch && matchPending;
   });
   renderStoreStudentsTable(filtered);
 }
@@ -417,7 +505,7 @@ function applyStoreFilters() {
 if (searchStoreInput) searchStoreInput.addEventListener('input', applyStoreFilters);
 if (storeBatchFilter) storeBatchFilter.addEventListener('change', applyStoreFilters);
 
-// --- Store Inventory & Ledgers ---
+// --- Store Inventory & Ledgers Loading Logic ---
 const productsBody = document.getElementById('productsBody');
 const storeStudentsBody = document.getElementById('storeStudentsBody');
 const addProductForm = document.getElementById('addProductForm');
@@ -436,7 +524,7 @@ async function loadStoreData() {
     const sSnap = await db.collection('students').orderBy('name').get();
     allStoreStudentsCache = [];
     sSnap.forEach((doc) => allStoreStudentsCache.push({ id: doc.id, ...doc.data() }));
-    applyStoreFilters(); // Render with filters applied
+    applyStoreFilters(); 
   } catch (err) { }
 }
 
@@ -483,7 +571,7 @@ function renderStoreStudentsTable(students) {
   students.forEach((student, index) => {
     const items = student.storeItems || [];
     const existingStorePaid = Number(student.storePaid) || 0;
-    const displayBatch = student.batch || 'Batch A'; // Show batch in store
+    const displayBatch = student.batch || 'Batch A'; 
 
     let storeTotalBill = 0;
     items.forEach(i => storeTotalBill += Number(i.price));
@@ -565,7 +653,6 @@ if (assignProductForm) {
       applyStoreFilters(); 
     }
     db.collection('students').doc(studentId).update({ storeItems: firebase.firestore.FieldValue.arrayUnion(newItem) }).then(() => {
-      // NAYA: Animation on successful assignment
       if(typeof Swal !== 'undefined') Swal.fire({ title: 'Assigned!', text: `${pName} added to student's account.`, icon: 'success', timer: 1500, showConfirmButton: false });
     }).catch(err => {
       if(typeof Swal !== 'undefined') Swal.fire('Error', 'Failed to sync.', 'error'); else alert('Failed to sync.');
@@ -573,7 +660,6 @@ if (assignProductForm) {
   });
 }
 
-// --- Dynamic Entity Update (Includes Editable Batch) ---
 function openEditModal(student) {
   document.getElementById('editStudentId').value = student.id;
   document.getElementById('editName').value = student.name || '';
@@ -632,7 +718,6 @@ async function updateStudentDatabase() {
   });
 }
 
-// --- Examination Result Controllers ---
 const resultModalDialog = document.getElementById('resultModal');
 function openResultEditor(student) {
   document.getElementById('resultStudentId').value = student.id;
@@ -682,9 +767,6 @@ if (btnRemoveResult) {
   });
 }
 
-// ============================================================
-// Certificate Generation Logic (Smart Edit & Delete)
-// ============================================================
 const certModal = document.getElementById('certModal');
 const certForm = document.getElementById('certForm');
 const certLinkResult = document.getElementById('certLinkResult');
