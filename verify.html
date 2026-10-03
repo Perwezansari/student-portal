@@ -19,7 +19,7 @@
     background: #ffffff;
     border: 2px solid #C49A45;
     border-radius: 12px;
-    padding: 30px 20px;
+    padding: 35px 20px 30px 20px;
     margin-top: 25px;
     box-shadow: 0 15px 35px rgba(120, 32, 43, 0.1);
     position: relative;
@@ -35,25 +35,8 @@
     pointer-events: none;
   }
 
-  .verified-badge-premium {
-    background: #1E7E34;
-    color: white;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 10px 20px;
-    border-radius: 30px;
-    font-size: 16px;
-    font-weight: 700;
-    margin-bottom: 25px;
-    box-shadow: 0 4px 12px rgba(30, 126, 52, 0.3);
-    position: relative;
-    z-index: 2;
-  }
-
   .detail-group {
-    margin-bottom: 18px;
+    margin-bottom: 22px;
     position: relative;
     z-index: 2;
   }
@@ -64,7 +47,7 @@
     color: #C49A45;
     text-transform: uppercase;
     letter-spacing: 1.5px;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
   }
 
   .detail-value {
@@ -75,7 +58,7 @@
 
   .detail-value.name {
     font-family: 'Cormorant Garamond', Georgia, serif;
-    font-size: 32px;
+    font-size: 34px;
     font-weight: 700;
     color: #78202B;
     letter-spacing: 0.5px;
@@ -86,7 +69,7 @@
     justify-content: space-between;
     margin-top: 25px;
     border-top: 1px solid #EADBCC;
-    padding-top: 15px;
+    padding-top: 18px;
   }
   
   .footer-left { text-align: left; }
@@ -225,11 +208,6 @@
 
         verifyContent.innerHTML = `
           <div class="verify-card-premium">
-            <div class="verified-badge-premium">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              Officially Verified
-            </div>
-            
             <div class="detail-group">
               <div class="detail-label">Proudly Presented To</div>
               <div class="detail-value name">${data.studentName}</div>
@@ -254,8 +232,8 @@
 
           <!-- Instagram Community Link (Moved Outside the Box) -->
           <div class="insta-cta-wrapper">
-            <p class="insta-text">Connect with Us</p>
-            <a href="https://www.instagram.com/shama_henna.classes?stkn=MWxvc3J1Z21obzY2cA==" target="_blank" class="insta-btn">
+            <p class="insta-text">Connect with Our Official Network</p>
+            <a href="https://instagram.com/shamahennaclasses" target="_blank" class="insta-btn">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
                 <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
