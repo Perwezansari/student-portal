@@ -750,8 +750,7 @@ if (certForm) {
     const secureDocId = existingId ? existingId : generateSecureId();
 
     try {
-      const baseUrl = window.location.href.split('/').slice(0, -1).join('/');
-      const verifyLink = `${baseUrl}/verify.html?id=${secureDocId}`;
+      const verifyLink = `https://shamahennaclasses.vercel.app/verify.html?id=${secureDocId}`;
 
       await db.collection('certificates').doc(secureDocId).set({ certNumber: rawCertNo, studentName: sName, courseName: sCourse, issueDate: sDate, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
 
