@@ -8,72 +8,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
-<!-- Premium Animated Popups Library (SweetAlert2) -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-<!-- Premium 3D Buttons -->
-<style>
-  .btn-pending {
-    background: #FFFFFF;
-    color: #B22222;
-    border: 1.5px solid #FFD0D0;
-    box-shadow: 0 4px 10px rgba(178, 34, 34, 0.08);
-    border-radius: 8px;
-    font-weight: 700;
-    font-size: 13px;
-    padding: 10px 16px;
-    transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    cursor: pointer;
-  }
-  .btn-pending:hover {
-    background: #FFF5F5;
-    border-color: #B22222;
-    box-shadow: 0 6px 15px rgba(178, 34, 34, 0.15);
-    transform: translateY(-2px);
-  }
-  .btn-pending.active {
-    background: linear-gradient(135deg, #B22222 0%, #78202B 100%);
-    color: #FFF;
-    border: 1.5px solid #78202B;
-    box-shadow: 0 6px 20px rgba(178, 34, 34, 0.25);
-  }
-  
-  .btn-excel {
-    background: linear-gradient(180deg, #28A745 0%, #217346 100%);
-    color: #FFF;
-    border: none;
-    border-bottom: 4px solid #144d2d;
-    border-radius: 8px;
-    font-weight: 700;
-    font-size: 13px;
-    padding: 10px 18px;
-    box-shadow: 0 5px 15px rgba(33, 115, 70, 0.25);
-    transition: all 0.15s ease;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    cursor: pointer;
-  }
-  .btn-excel:hover {
-    transform: translateY(1px);
-    border-bottom: 3px solid #144d2d;
-    box-shadow: 0 4px 10px rgba(33, 115, 70, 0.3);
-  }
-  .btn-excel:active {
-    transform: translateY(4px);
-    border-bottom: 0px solid #144d2d;
-    box-shadow: 0 2px 5px rgba(33, 115, 70, 0.3);
-    margin-bottom: -4px;
-  }
-</style>
 </head>
 <body>
 
-<!-- Administrator Authentication View -->
 <div id="loginView" class="auth-wrap">
   <div class="top-nav-link">
     <a href="index.html" class="nav-switch-btn">👨‍🎓 Student Portal →</a>
@@ -96,7 +34,6 @@
     <button type="submit" class="btn primary full">Login to Admin Panel</button>
     <p id="loginError" class="error"></p>
 
-    <!-- VIP Footer Design with Automatic Year for Admin -->
     <div class="auth-footer">
       Developed by <strong class="auth-footer-highlight">Perwez</strong>
       <div style="font-size: 10px; margin-top: 6px; color: #9E9493; letter-spacing: 0.5px;">&copy; <script>document.write(new Date().getFullYear());</script> Shama Henna Classes. All Rights Reserved.</div>
@@ -104,7 +41,6 @@
   </form>
 </div>
 
-<!-- Main Administrator Dashboard -->
 <div id="dashboardView" style="display:none;">
   <header class="topbar">
     <div class="topbar-brand">
@@ -151,7 +87,7 @@
         <div><label for="sDate">Joining / Admission Date</label><input type="date" id="sDate" class="date-fix" required></div>
         <div><label for="sTotal">Total Course Fee (₹)</label><input type="number" id="sTotal" min="0" step="1" placeholder="e.g. 5000" required></div>
         <div><label for="sDiscount">Discount Given (₹)</label><input type="number" id="sDiscount" min="0" step="1" placeholder="0" value="0"></div>
-        <div><label for="sPaid">Paid Amount (₹)</label><input type="number" id="sPaid" min="0" step="1" placeholder="0" required value="0"></div>
+        <div><label for="sPaid">Initial Paid Amount (₹)</label><input type="number" id="sPaid" min="0" step="1" placeholder="0" required value="0"></div>
         <div><label for="sEmail">Student Login ID (Email)</label><input type="email" id="sEmail" required placeholder="student1@henna.com"></div>
         <div><label for="sPassword">Student Login Password</label><input type="text" id="sPassword" required minlength="6" placeholder="Min 6 characters"></div>
         <button type="submit" class="btn primary">Enroll & Save Student</button>
@@ -163,15 +99,19 @@
       <div class="card-head">
         <h2>📋 Registered Students & Fee Records</h2>
       </div>
-      <div class="search-box" style="display: flex; gap: 10px; flex-wrap: wrap;">
+      
+      <div class="search-box">
         <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search student by name or email ID..." style="flex: 2; min-width: 200px;">
-        <select id="batchFilter" class="search-input" style="flex: 1; min-width: 150px;">
+        <select id="batchFilter" class="search-input modal-select" style="flex: 1; min-width: 150px; margin-bottom: 0;">
           <option value="ALL">All Batches</option>
         </select>
-        <button type="button" id="pendingMainFilterBtn" class="btn-pending">🔴 Pending Dues</button>
+        
+        <button type="button" id="pendingMainFilterBtn" class="btn-pending"> Pending Dues</button>
         <button type="button" id="exportLedgerBtn" class="btn-excel">📥 Excel Report</button>
       </div>
+      
       <p id="permissionError" class="error" style="display:none;">Access restricted. Administrator credentials required.</p>
+      
       <div class="table-wrap">
         <table>
           <thead>
@@ -195,7 +135,6 @@
   </main>
 </div>
 
-<!-- Store Management Interface -->
 <div id="storeDashboardView" class="store-dashboard-container" style="display:none;">
   <header class="topbar topbar-store">
     <div class="topbar-brand">
@@ -239,9 +178,9 @@
       <div class="card-head">
         <h2>👩‍🎓 Student Store Records</h2>
       </div>
-      <div class="search-box" style="display: flex; gap: 10px; flex-wrap: wrap;">
+      <div class="search-box">
         <input type="text" id="searchStoreInput" class="search-input" placeholder="🔍 Search student by name in store..." style="flex: 2; min-width: 200px;">
-        <select id="storeBatchFilter" class="search-input" style="flex: 1; min-width: 150px;">
+        <select id="storeBatchFilter" class="search-input modal-select" style="flex: 1; min-width: 150px; margin-bottom: 0;">
           <option value="ALL">All Batches</option>
         </select>
         <button type="button" id="pendingStoreFilterBtn" class="btn-pending">🔴 Pending Dues</button>
@@ -267,7 +206,6 @@
   </main>
 </div>
 
-<!-- Dialog Modals -->
 <div id="assignProductModal" class="modal-overlay" style="display:none;">
   <div class="modal-content">
     <div class="card-head modal-head">
@@ -309,7 +247,6 @@
   </div>
 </div>
 
-<!-- Editable Student Record Modal -->
 <div id="editStudentModal" class="modal-overlay" style="display:none;">
   <div class="modal-content modal-content-lg">
     <div class="card-head modal-head">
@@ -331,9 +268,10 @@
       <label>Total Fee (₹):</label>
       <input type="number" id="editTotalFee" class="modal-field" required>
       <label>Discount (₹):</label>
-      <input type="number" id="editDiscount" class="modal-field" required>
-      <label>Paid Amount (₹):</label>
-      <input type="number" id="editPaidFee" class="modal-field-bottom" required>
+      <input type="number" id="editDiscount" class="modal-field-bottom" required>
+      
+      <p style="font-size: 11px; color: #888; text-align: center; margin-bottom: 10px;">Note: Paid amount can only be modified via the Payment History section.</p>
+      
       <div class="modal-footer-actions-compact">
         <button type="button" onclick="closeEditModal()" class="btn ghost btn-flex-fill">Cancel</button>
         <button type="button" onclick="updateStudentDatabase()" class="btn primary btn-flex-fill">Update Record</button>
@@ -342,7 +280,6 @@
   </div>
 </div>
 
-<!-- Certificate Generation Modal -->
 <div id="certModal" class="modal-overlay" style="display:none;">
   <div class="modal-content">
     <div class="card-head modal-head">
@@ -371,6 +308,28 @@
     <div id="certLinkResult" class="modal-footer-actions" style="display:none; background: #E8F5E9; padding: 10px; border-radius: 8px; flex-direction: column;">
        <p class="success" style="font-size:12px; margin-bottom: 5px; font-weight: bold;">✅ Saved! Use this link for QR Code:</p>
        <input type="text" id="certGeneratedLink" class="modal-field" style="margin-bottom:0; font-size:11px;" readonly>
+    </div>
+  </div>
+</div>
+
+<div id="viewStudentProfileModal" class="modal-overlay" style="display:none;">
+  <div class="modal-content modal-content-lg" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
+    <div class="card-head modal-head">
+      <h3>👁️ Student Profile & History</h3>
+      <button type="button" onclick="closeStudentProfileModal()" class="btn ghost small">✕</button>
+    </div>
+    
+    <div id="studentProfileContent"></div>
+
+    <div style="margin-top: 20px; border-top: 2px solid #F0F0F0; padding-top: 15px;">
+      <h4>Payment History</h4>
+      <div id="paymentHistoryContainer" style="margin-bottom: 15px; max-height: 200px; overflow-y: auto; background: #fafafa; border: 1px solid #ddd; border-radius: 6px; padding: 10px;"></div>
+      
+      <form id="addPaymentFormProfile" style="display: flex; gap: 10px; align-items: center;">
+         <input type="hidden" id="paymentProfileStudentId">
+         <input type="number" id="newPaymentAmount" placeholder="Add Amount (₹)" min="1" required class="modal-field" style="margin-bottom: 0; flex: 2;">
+         <button type="submit" class="btn primary" style="flex: 1; padding: 10px;">➕ Add Payment</button>
+      </form>
     </div>
   </div>
 </div>

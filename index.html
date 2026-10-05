@@ -12,7 +12,6 @@
 </head>
 <body>
 
-<!-- Authentication View -->
 <div id="loginView" class="auth-wrap">
   <div class="top-nav-link">
     <a href="admin.html" class="nav-switch-btn">Admin Login →</a>
@@ -34,13 +33,12 @@
     <label for="password">Password</label>
     <div class="password-wrapper">
       <input type="password" id="password" required autocomplete="current-password" placeholder="••••••••">
-      <button type="button" class="toggle-password" onclick="togglePasswordVisibility('password', this)">👁️</button>
+      <button type="button" class="toggle-password" onclick="togglePasswordVisibility('password', this)">👁</button>
     </div>
 
     <button type="submit" class="btn primary full">Login to Dashboard</button>
     <p id="loginError" class="error"></p>
 
-    <!-- VIP Footer Design with Automatic Year -->
     <div class="auth-footer">
       Developed by <strong class="auth-footer-highlight">Perwez</strong>
       <div style="font-size: 10px; margin-top: 6px; color: #9E9493; letter-spacing: 0.5px;">&copy; <script>document.write(new Date().getFullYear());</script> Shama Henna Classes. All Rights Reserved.</div>
@@ -48,7 +46,6 @@
   </form>
 </div>
 
-<!-- Student Dashboard Container -->
 <div id="dashboardView" style="display:none;">
   <header class="topbar">
     <div class="topbar-brand">
@@ -99,7 +96,7 @@
       triggerElement.textContent = '🙈';
     } else {
       field.type = 'password';
-      triggerElement.textContent = '👁️';
+      triggerElement.textContent = '👁';
     }
   }
 </script>

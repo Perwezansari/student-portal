@@ -1,4 +1,3 @@
-// Student Portal Application Logic 
 if (typeof Swal === 'undefined') {
   const script = document.createElement('script');
   script.src = "https://cdn.jsdelivr.net/npm/sweetalert2@11";
@@ -7,7 +6,6 @@ if (typeof Swal === 'undefined') {
 
 const loginView = document.getElementById('loginView');
 const dashboardView = document.getElementById('dashboardView');
-
 const loginForm = document.getElementById('loginForm');
 const loginError = document.getElementById('loginError');
 const logoutBtn = document.getElementById('logoutBtn');
@@ -18,7 +16,7 @@ const btnPrintReceipt = document.getElementById('btnPrintReceipt');
 
 let loggedInStudentData = null;
 
-auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(() => {});
+auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(function() {});
 
 function resetLoginFormState() {
   if (loginForm) loginForm.reset();
@@ -29,8 +27,9 @@ function resetLoginFormState() {
   }
 }
 
-auth.onAuthStateChanged(async (user) => {
+auth.onAuthStateChanged(async function(user) {
   if (loginError) loginError.textContent = '';
+  
   if (user && user.email) {
     await fetchStudentProfile(user.uid);
   } else {
@@ -42,7 +41,7 @@ auth.onAuthStateChanged(async (user) => {
 });
 
 if (loginForm) {
-  loginForm.addEventListener('submit', async (e) => {
+  loginForm.addEventListener('submit', async function(e) {
     e.preventDefault();
     if (loginError) loginError.textContent = '';
     
@@ -71,9 +70,8 @@ if (loginForm) {
   });
 }
 
-// --- Professional Animated Logout Logic ---
 if (logoutBtn) {
-  logoutBtn.addEventListener('click', () => {
+  logoutBtn.addEventListener('click', function() {
     if (typeof Swal !== 'undefined') {
       Swal.fire({
         title: 'Logout?',
@@ -83,7 +81,7 @@ if (logoutBtn) {
         confirmButtonColor: '#78202B',
         cancelButtonColor: '#7A6E6D',
         confirmButtonText: 'Yes, Logout'
-      }).then(async (result) => {
+      }).then(async function(result) {
         if (result.isConfirmed) {
           resetLoginFormState();
           await auth.signOut();
@@ -116,12 +114,24 @@ async function fetchStudentProfile(uid) {
     
     if (loginView) loginView.style.display = 'none';
     if (dashboardView) dashboardView.style.display = 'block';
-    if (welcomeStudentName) welcomeStudentName.textContent = dataPayload.name || 'Student';
+    
+    if (welcomeStudentName) {
+      welcomeStudentName.textContent = dataPayload.name || 'Student';
+    }
 
     const totalAmount = Number(dataPayload.totalFee) || 0;
     const discountAmount = Number(dataPayload.discount) || 0;
     const netPayableAmount = Math.max(0, totalAmount - discountAmount);
-    const paidAmount = Number(dataPayload.paidFee) || 0;
+    
+    let paidAmount = 0;
+    if (dataPayload.paymentHistory && dataPayload.paymentHistory.length > 0) {
+       paidAmount = dataPayload.paymentHistory.reduce((sum, record) => {
+         return sum + Number(record.amount);
+       }, 0);
+    } else {
+       paidAmount = Number(dataPayload.paidFee) || 0;
+    }
+
     const dueAmount = Math.max(0, netPayableAmount - paidAmount);
     const formattedAdmissionDate = formatDisplayDate(dataPayload.admissionDate);
     const displayBatch = dataPayload.batch || 'Batch A'; 
@@ -146,12 +156,13 @@ async function fetchStudentProfile(uid) {
 
     if (resultSectionContent) {
       if (dataPayload.result && dataPayload.result.isPublished) {
+        const passClass = dataPayload.result.status === 'PASS' ? 'badge-pass' : 'badge-fail';
         resultSectionContent.innerHTML = `
           <div class="result-card-box">
             <div class="result-grid-display">
               <div class="result-stat-item"><span>Marks Obtained</span><strong>${sanitizeOutput(dataPayload.result.marks || '-')}</strong></div>
               <div class="result-stat-item"><span>Grade</span><strong class="result-stat-grade">${sanitizeOutput(dataPayload.result.grade || '-')}</strong></div>
-              <div class="result-stat-item"><span>Status</span><div><span class="${dataPayload.result.status === 'PASS' ? 'badge-pass' : 'badge-fail'}">${sanitizeOutput(dataPayload.result.status || 'PASS')}</span></div></div>
+              <div class="result-stat-item"><span>Status</span><div><span class="${passClass}">${sanitizeOutput(dataPayload.result.status || 'PASS')}</span></div></div>
             </div>
           </div>
         `;
@@ -170,14 +181,23 @@ async function fetchStudentProfile(uid) {
 }
 
 if (btnPrintReceipt) {
-  btnPrintReceipt.addEventListener('click', () => {
+  btnPrintReceipt.addEventListener('click', function() {
     if (!loggedInStudentData) return;
     
     const studentRecord = loggedInStudentData;
     const courseTotal = Number(studentRecord.totalFee) || 0;
     const courseDiscount = Number(studentRecord.discount) || 0;
     const courseNet = Math.max(0, courseTotal - courseDiscount);
-    const coursePaid = Number(studentRecord.paidFee) || 0;
+    
+    let coursePaid = 0;
+    if (studentRecord.paymentHistory && studentRecord.paymentHistory.length > 0) {
+       coursePaid = studentRecord.paymentHistory.reduce((sum, record) => {
+         return sum + Number(record.amount);
+       }, 0);
+    } else {
+       coursePaid = Number(studentRecord.paidFee) || 0;
+    }
+    
     const courseDue = Math.max(0, courseNet - coursePaid);
     
     const admissionDisplayDate = formatDisplayDate(studentRecord.admissionDate);
@@ -188,6 +208,9 @@ if (btnPrintReceipt) {
       alert('Pop-up blocked. Please enable browser pop-ups to print receipts.');
       return;
     }
+
+    const dueColor = courseDue > 0 ? '#B22222' : '#2E7D32';
+    const statusText = courseDue > 0 ? 'PARTIAL / DUE' : 'FULLY PAID';
 
     documentWindow.document.open();
     documentWindow.document.write(`
@@ -216,7 +239,7 @@ if (btnPrintReceipt) {
           .text-right { text-align: right; }
           .gold-text { color: #C49A45; }
           .success { color: #1E7E34; }
-          .due-row td { color: ${courseDue > 0 ? '#B22222' : '#2E7D32'}; font-weight: 800; font-size: 15px; border-top: 1.5px solid #EADBCC; border-bottom: 1.5px solid #EADBCC; background: #FFF9F9; }
+          .due-row td { color: ${dueColor}; font-weight: 800; font-size: 15px; border-top: 1.5px solid #EADBCC; border-bottom: 1.5px solid #EADBCC; background: #FFF9F9; }
           .receipt-footer { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 24px; }
           .receipt-badge { font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 4px; background: #E8F5E9; color: #2E7D32; }
           .signature-line { text-align: center; border-top: 1px solid #7A6E65; padding-top: 4px; width: 140px; font-size: 11px; font-weight: 600; color: #7A6E65; }
@@ -229,7 +252,7 @@ if (btnPrintReceipt) {
       </head>
       <body>
         <div class="receipt-action-bar">
-          <button class="btn primary btn-flex-fill" style="flex:1;" onclick="window.print()">📥 Save as PDF / Print</button>
+          <button class="btn primary" style="flex:1;" onclick="window.print()">📥 Save as PDF / Print</button>
           <button class="btn ghost" onclick="window.close()">Close</button>
         </div>
         <div class="receipt-card">
@@ -248,12 +271,12 @@ if (btnPrintReceipt) {
               <tr><td>Course Total Fee</td><td class="text-right">₹${courseTotal.toLocaleString('en-IN')}</td></tr>
               <tr><td>Special Discount / Concession</td><td class="text-right gold-text">-₹${courseDiscount.toLocaleString('en-IN')}</td></tr>
               <tr><td><strong>Net Payable Fee</strong></td><td class="text-right"><strong>₹${courseNet.toLocaleString('en-IN')}</strong></td></tr>
-              <tr><td class="success">Total Amount Paid</td><td class="text-right success text-bold">₹${coursePaid.toLocaleString('en-IN')}</td></tr>
+              <tr><td class="success">Total Amount Paid</td><td class="text-right success"><strong>₹${coursePaid.toLocaleString('en-IN')}</strong></td></tr>
               <tr class="due-row"><td>Remaining Balance (Due)</td><td class="text-right">₹${courseDue.toLocaleString('en-IN')}</td></tr>
             </tbody>
           </table>
           <div class="receipt-footer">
-            <div><span class="receipt-badge">Status: ${courseDue > 0 ? 'PARTIAL / DUE' : 'FULLY PAID'}</span></div>
+            <div><span class="receipt-badge">Status: ${statusText}</span></div>
             <div class="signature-line">Authorized Signature</div>
           </div>
         </div>
