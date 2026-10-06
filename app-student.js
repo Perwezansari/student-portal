@@ -142,7 +142,7 @@ async function fetchStudentProfile(uid) {
         <div class="info-row"><span>Class Batch</span><strong style="color:var(--gold);">${sanitizeOutput(displayBatch)}</strong></div>
         <div class="info-row"><span>Admission Date</span><strong>${formattedAdmissionDate}</strong></div>
         <div class="info-row"><span>Total Course Fee</span><strong>₹${totalAmount.toLocaleString('en-IN')}</strong></div>
-        <div class="info-row"><span>Discount Concession</span><strong class="gold-text">-₹${discountAmount.toLocaleString('en-IN')}</strong></div>
+        <div class="info-row"><span>Discount Concession</span><strong class="gold-text">${discountAmount > 0 ? '-₹' + discountAmount.toLocaleString('en-IN') : '₹0'}</strong></div>
         <div class="info-row"><span>Net Payable Fee</span><strong>₹${netPayableAmount.toLocaleString('en-IN')}</strong></div>
         <div class="info-row"><span>Amount Paid</span><strong class="success">₹${paidAmount.toLocaleString('en-IN')}</strong></div>
         <div class="info-row">
@@ -269,7 +269,7 @@ if (btnPrintReceipt) {
             <thead><tr><th>Description</th><th class="text-right">Amount</th></tr></thead>
             <tbody>
               <tr><td>Course Total Fee</td><td class="text-right">₹${courseTotal.toLocaleString('en-IN')}</td></tr>
-              <tr><td>Special Discount / Concession</td><td class="text-right gold-text">-₹${courseDiscount.toLocaleString('en-IN')}</td></tr>
+              <tr><td>Special Discount / Concession</td><td class="text-right gold-text">${courseDiscount > 0 ? '-₹' + courseDiscount.toLocaleString('en-IN') : '₹0'}</td></tr>
               <tr><td><strong>Net Payable Fee</strong></td><td class="text-right"><strong>₹${courseNet.toLocaleString('en-IN')}</strong></td></tr>
               <tr><td class="success">Total Amount Paid</td><td class="text-right success"><strong>₹${coursePaid.toLocaleString('en-IN')}</strong></td></tr>
               <tr class="due-row"><td>Remaining Balance (Due)</td><td class="text-right">₹${courseDue.toLocaleString('en-IN')}</td></tr>
