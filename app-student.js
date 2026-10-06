@@ -211,6 +211,8 @@ if (btnPrintReceipt) {
 
     const dueColor = courseDue > 0 ? '#B22222' : '#2E7D32';
     const statusText = courseDue > 0 ? 'PARTIAL / DUE' : 'FULLY PAID';
+    const badgeBg = courseDue > 0 ? '#ffebee' : '#e8f5e9';
+    const badgeText = courseDue > 0 ? '#b22222' : '#2e7d32';
 
     documentWindow.document.open();
     documentWindow.document.write(`
@@ -241,7 +243,7 @@ if (btnPrintReceipt) {
           .success { color: #1E7E34; }
           .due-row td { color: ${dueColor}; font-weight: 800; font-size: 15px; border-top: 1.5px solid #EADBCC; border-bottom: 1.5px solid #EADBCC; background: #FFF9F9; }
           .receipt-footer { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 24px; }
-          .receipt-badge { font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 4px; background: #E8F5E9; color: #2E7D32; }
+          .receipt-badge { font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 4px; }
           .signature-line { text-align: center; border-top: 1px solid #7A6E65; padding-top: 4px; width: 140px; font-size: 11px; font-weight: 600; color: #7A6E65; }
           @media print {
             .receipt-action-bar { display: none !important; }
@@ -276,7 +278,7 @@ if (btnPrintReceipt) {
             </tbody>
           </table>
           <div class="receipt-footer">
-            <div><span class="receipt-badge">Status: ${statusText}</span></div>
+            <div><span class="receipt-badge" style="background: ${badgeBg}; color: ${badgeText};">Status: ${statusText}</span></div>
             <div class="signature-line">Authorized Signature</div>
           </div>
         </div>
